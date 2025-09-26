@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizMaster - 在线刷题系统</title>
+
+    <!-- 外部资源：只保留一个Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+
+    <!-- Tailwind CSS：指定版本 -->
+    <script src="https://cdn.tailwindcss.com?v=3.3.5"></script>
+
+    <!-- Tailwind 配置：简化冗余配置 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // 与页面暗黑模式逻辑匹配
+            theme: {
+                extend: {
+                    container: {
+                        padding: {
+                            DEFAULT: '1rem',
+                            sm: '2rem',
+                        },
+                    },
+                },
+            }
+        }
+    </script>
+
+    <!-- 可选：添加自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

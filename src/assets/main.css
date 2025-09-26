@@ -1,0 +1,54 @@
+@keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.animate-scaleIn {
+    animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* 富文本样式调整 */
+.prose p {
+    margin-bottom: 1rem;
+}
+
+.prose ul, .prose ol {
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.dark .prose-invert {
+    color: #e5e7eb;
+}
+
+.dark .prose-invert ul,
+.dark .prose-invert ol {
+    color: #d1d5db;
+}
+
+/* 滚动条样式优化 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
