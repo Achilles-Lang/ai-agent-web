@@ -1,10 +1,11 @@
 // src/router/index.js
-import { createRouter, createWebHistory } from 'vue-router'
+import {createRouter, createWebHistory} from 'vue-router'
 
 // 导入页面组件
 import HomePage from '../views/HomePage.vue'  // 假设这是你的"第一个Vue页面"
 import Practice from '../views/QuestionPractice.vue'  // 刷题平台主界面
 import QuizDetailPage from '../views/QuizDetailPage.vue';
+import QuestionBankGenerator from "@/views/QuestionBankGenerator.vue";
 
 // 路由规则
 const routes = [
@@ -14,15 +15,20 @@ const routes = [
         component: HomePage
     },
     {
-        path: '/questions',
-        name: 'Questions',
+        path: '/questions/:businessId',
+        name: 'QuizTaking',
         component: Practice
     },
     {
-        path: '/categories/:category',
+        path: '/categories/:businessId',
         name: 'QuizDetail',
         component: QuizDetailPage,
         props: true // 允许将路由参数作为组件props传递
+    },
+    {
+        path: '/question-bank/generate/:category',
+        name: 'QuestionBankGenerator',
+        component: QuestionBankGenerator
     }
 ]
 

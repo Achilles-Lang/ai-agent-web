@@ -312,7 +312,7 @@ const handleSearch = () => {
 
 // 导航到分类详情页
 const navigateToCategory = (category) => {
-  router.push({ name: 'QuizDetail', params: { category } });
+  router.push({ name: 'QuestionBankGenerator', params: { category } });
 };
 
 // 开始练习（跳转到答题页）
