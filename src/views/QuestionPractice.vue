@@ -12,21 +12,16 @@
               <span class="text-xl font-bold">知题</span>
             </router-link>
           </div>
-
           <div class="flex items-center gap-6">
-            <!-- 计时器 -->
             <div class="hidden md:flex items-center gap-2 bg-slate-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg">
               <i class="fa fa-clock-o text-indigo-600 dark:text-indigo-400"></i>
               <span class="font-medium">{{ formattedTime }}</span>
             </div>
-
-            <!-- 题目进度 -->
             <div class="hidden md:flex items-center gap-2">
               <span class="text-sm">
                 {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
               </span>
             </div>
-
             <button @click="toggleDarkMode"
                     class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
               <i class="fa" :class="isDarkMode ? 'fa-sun-o' : 'fa-moon-o'"></i>
@@ -40,8 +35,8 @@
       </div>
     </header>
 
-    <!-- 主内容区 -->
-    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 主内容区：5列布局（1导航+3题目+1AI） -->
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-10 py-8">
       <!-- 错误提示 -->
       <div v-if="hasError"
            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
@@ -60,57 +55,23 @@
         </div>
       </div>
 
-      <!-- 答题完成统计 -->
-      <div v-if="isAllAnswered"
-           class="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 text-center max-w-2xl mx-auto">
-        <div
-            class="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mx-auto mb-6">
-          <i class="fa fa-check-circle text-3xl text-indigo-500"></i>
-        </div>
-        <h2 class="text-2xl font-bold mb-2">答题完成！</h2>
-        <p class="text-slate-600 dark:text-slate-400 mb-6">恭喜您完成了所有题目</p>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-            <p class="text-sm text-slate-500 dark:text-slate-400">总题数</p>
-            <p class="text-2xl font-bold">{{ totalQuestions }}</p>
+      <!-- 加载中占位 -->
+      <div v-if="isLoading && !hasError" class="space-y-8">
+        <div class="h-16 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          <div class="lg:col-span-1 h-96 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
+          <div class="lg:col-span-3 space-y-6">
+            <div class="h-64 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
+            <div class="h-16 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
           </div>
-          <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-            <p class="text-sm text-slate-500 dark:text-slate-400">正确</p>
-            <p class="text-2xl font-bold text-green-500">{{ correctCount }}</p>
-          </div>
-          <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-            <p class="text-sm text-slate-500 dark:text-slate-400">错误</p>
-            <p class="text-2xl font-bold text-red-500">{{ totalQuestions - correctCount }}</p>
-          </div>
-          <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-            <p class="text-sm text-slate-500 dark:text-slate-400">正确率</p>
-            <p class="text-2xl font-bold text-indigo-500">{{ Math.round((correctCount / totalQuestions) * 100) }}%</p>
-          </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <router-link
-              to="/"
-              class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <i class="fa fa-home"></i>
-            <span>返回首页</span>
-          </router-link>
-          <button
-              @click="restartQuiz"
-              class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <i class="fa fa-refresh"></i>
-            <span>重新答题</span>
-          </button>
+          <div class="lg:col-span-1 h-96 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
         </div>
       </div>
 
       <!-- 答题区域 -->
-      <div v-if="isDataLoaded && !hasError && !isAllAnswered" class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div v-if="isDataLoaded && !hasError" class="grid grid-cols-1 lg:grid-cols-10 gap-8">
         <!-- 左侧：题目导航 -->
-        <div class="lg:col-span-1">
+        <div class="lg:col-span-2">
           <div
               class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 sticky top-20">
             <h3 class="font-semibold mb-4 flex items-center gap-2">
@@ -132,7 +93,6 @@
                 {{ index + 1 }}
               </button>
             </div>
-
             <div class="mt-6 space-y-3">
               <div class="flex items-center gap-2 text-sm">
                 <div class="w-4 h-4 rounded bg-slate-100 dark:bg-slate-700"></div>
@@ -155,8 +115,8 @@
           </div>
         </div>
 
-        <!-- 右侧：题目内容 -->
-        <div class="lg:col-span-3">
+        <!-- 中间：题目内容 -->
+        <div class="lg:col-span-5">
           <div class="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 mb-6">
             <div class="flex items-start gap-3 mb-6">
               <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
@@ -175,7 +135,7 @@
               </div>
             </div>
 
-            <!-- 题目内容区域 -->
+            <!-- 题目选项/输入区 -->
             <div class="pl-11">
               <!-- 单选题 -->
               <div v-if="isSingleChoice(currentQuestion)" class="space-y-3">
@@ -314,15 +274,14 @@
                     class="w-full p-3 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none transition-all"
                     placeholder="请在此输入答案..."
                 ></textarea>
-
-                <!-- 简答题答案反馈 -->
-                <div v-if="currentQuestion.answered" class="mt-4 p-3 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600">
+                <div v-if="currentQuestion.answered"
+                     class="mt-4 p-3 bg-white dark:bg-slate-700 rounded border border-slate-200 dark:border-slate-600">
                   <p class="text-sm font-medium mb-1">参考答案：</p>
                   <p class="text-slate-600 dark:text-slate-400 text-sm">{{ currentQuestion.rightAnswer }}</p>
                 </div>
               </div>
 
-              <!-- 答案反馈区域 -->
+              <!-- 答案反馈 -->
               <div v-if="currentQuestion.answered" class="mt-6">
                 <div
                     :class="currentQuestion.isCorrect ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'"
@@ -334,7 +293,6 @@
                       {{ currentQuestion.isCorrect ? '回答正确' : '回答错误' }}
                     </h3>
                   </div>
-
                   <div v-if="currentQuestion.explanation" class="mt-3">
                     <p class="text-sm font-medium mb-1">解析：</p>
                     <p class="text-slate-600 dark:text-slate-400 text-sm">{{ currentQuestion.explanation }}</p>
@@ -356,12 +314,10 @@
                 <i class="fa fa-arrow-left"></i>
                 <span>上一题</span>
               </button>
-
               <div class="text-sm md:hidden flex items-center gap-2">
                 <i class="fa fa-clock-o text-indigo-600 dark:text-indigo-400"></i>
                 <span class="font-medium">{{ formattedTime }}</span>
               </div>
-
               <div v-if="!currentQuestion.answered" class="flex gap-3">
                 <button
                     @click="submitCurrentQuestion"
@@ -371,7 +327,6 @@
                   <span>提交答案</span>
                 </button>
               </div>
-
               <div v-if="currentQuestion.answered" class="flex gap-3">
                 <button
                     @click="nextQuestion"
@@ -386,103 +341,213 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- 加载中占位区域 -->
-      <div v-if="isLoading && !hasError" class="space-y-8">
-        <div class="h-16 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div class="lg:col-span-1 h-96 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
-          <div class="lg:col-span-3 space-y-6">
-            <div class="h-64 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
-            <div class="h-16 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse"></div>
+        <!-- 右侧：强化版AI答疑区域（核心优化） -->
+        <div class="lg:col-span-3">
+          <div
+              class="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 sticky top-20 h-[calc(80vh-10rem)] flex flex-col shadow-sm">
+            <!-- AI标题栏 -->
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold flex items-center gap-2 text-lg">
+                <i class="fa fa-robot text-indigo-500 text-xl"></i>
+                <span>AI答疑</span>
+              </h3>
+              <span v-if="!currentQuestion.answered" class="text-xs text-amber-500 dark:text-amber-400">
+          <i class="fa fa-info-circle"></i> 答完当前题可提问
+        </span>
+            </div>
+
+            <!-- AI对话内容区（核心优化：滚动+格式+打字机） -->
+            <div
+                ref="chatContainer"
+                class="flex-grow overflow-y-auto p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg mb-4 space-y-4 border border-slate-100 dark:border-slate-600">
+              <!-- 未答题提示和无对话提示（不变） -->
+              <div v-if="!currentQuestion.answered"
+                   class="text-center text-slate-500 dark:text-slate-400 text-sm py-10">
+                <i class="fa fa-comment-o text-2xl mb-2 block"></i>
+                请先完成当前题目的作答
+              </div>
+
+              <div v-else-if="currentQuestion.answered && !aiMessages.length"
+                   class="text-center text-slate-500 dark:text-slate-400 text-sm py-10">
+                <i class="fa fa-lightbulb-o text-2xl mb-2 block text-indigo-400"></i>
+                可以继续向我提问哦！
+              </div>
+
+              <!-- 对话历史（优化后） -->
+              <div v-else class="space-y-4">
+                <div v-for="(msg, idx) in aiMessages" :key="idx" class="flex flex-col gap-1.5">
+                  <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <i :class="msg.role === 'user' ? 'fa fa-user' : 'fa fa-robot'"></i>
+                    {{ msg.role === 'user' ? '我' : 'AI助手' }}
+                  </div>
+                  <div
+                      :class="msg.role === 'user' ? 'bg-indigo-100 dark:bg-indigo-900/30 rounded-tr-none' : 'bg-white dark:bg-slate-800 rounded-tl-none'"
+                      class="p-3 rounded-lg text-sm border border-slate-100 dark:border-slate-600"
+                  >
+                    <!-- 用户消息 -->
+                    <template v-if="msg.role === 'user'">
+                      {{ msg.content }}
+                    </template>
+
+                    <!-- AI消息：优化格式+实时滚动 -->
+                    <template v-else>
+                      <div v-html="formatContent(msg.content.slice(0, msg.displayLength))"></div>
+                      <span v-if="msg.displayLength < msg.content.length"
+                            class="animate-pulse inline-block w-1.5">|</span>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI输入区（添加回车快捷键） -->
+            <div class="flex gap-2">
+              <input
+                  v-model="aiInput"
+                  :disabled="!currentQuestion.answered"
+                  placeholder="可以继续向我提问哦！"
+                  class="flex-grow px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  @keydown.enter="handleAISend">
+              <button
+                  @click="handleAISend"
+                  :disabled="!currentQuestion.answered"
+                  class="w-10 h-10 rounded-lg bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i class="fa fa-paper-plane"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </main>
 
+    <!-- 答题完成总结弹窗 -->
+    <div v-if="showSummaryModal"
+         class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div
+          class="bg-white dark:bg-slate-800 rounded-xl p-8 border border-slate-200 dark:border-slate-700 text-center max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+        <button
+            @click="showSummaryModal = false"
+            class="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all text-xl"
+        >
+          <i class="fa fa-times"></i>
+        </button>
+
+        <div
+            class="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mx-auto mb-6">
+          <i class="fa fa-check-circle text-3xl text-indigo-500"></i>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">答题完成！</h2>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">恭喜您完成了所有题目</p>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <p class="text-sm text-slate-500 dark:text-slate-400">总题数</p>
+            <p class="text-2xl font-bold">{{ totalQuestions }}</p>
+          </div>
+          <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <p class="text-sm text-slate-500 dark:text-slate-400">正确</p>
+            <p class="text-2xl font-bold text-green-500">{{ correctCount }}</p>
+          </div>
+          <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <p class="text-sm text-slate-500 dark:text-slate-400">错误</p>
+            <p class="text-2xl font-bold text-red-500">{{ totalQuestions - correctCount }}</p>
+          </div>
+          <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+            <p class="text-sm text-slate-500 dark:text-slate-400">正确率</p>
+            <p class="text-2xl font-bold text-indigo-500">{{ Math.round((correctCount / totalQuestions) * 100) }}%</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <router-link
+              to="/"
+              class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <i class="fa fa-home"></i>
+            <span>返回首页</span>
+          </router-link>
+          <button
+              @click="restartQuiz"
+              class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <i class="fa fa-refresh"></i>
+            <span>再次答题</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 页脚 -->
-    <footer v-if="!isAllAnswered"
-            class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 mt-16">
+    <footer
+        class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 mt-16">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500 dark:text-slate-500">
-        <p>© 2023 知题 - 让学习更高效</p>
+        <p>© 知题 - 让学习更高效</p>
       </div>
     </footer>
   </div>
 </template>
 
 <script setup>
-import {ref, onMounted, computed, watch} from 'vue';
+import {ref, onMounted, computed, watch, nextTick} from 'vue'; // 新增nextTick引入
 import {useRouter, useRoute} from 'vue-router';
 import {getQuestionBank} from "@/api/question.js";
+import {chat} from "@/api/chat.js";
 
-// 1. 基础状态
+// 基础状态
 const isDarkMode = ref(false);
 const router = useRouter();
 const route = useRoute();
-
-// 2. 路由参数：从params获取题库ID
 const bankId = ref(route.params.businessId || '');
 
-// 3. 答题数据
+const request = ref({
+  chatId: 1,
+  question: null,
+  userQuestion: ''
+});
+
+
+// 答题数据
 const questions = ref([]);
 const currentQuestionIndex = ref(0);
 const totalQuestions = computed(() => questions.value.length);
-const timeSpent = ref(0); // 单位：秒
+const timeSpent = ref(0);
 const timerInterval = ref(null);
-const correctCount = ref(0); // 正确题数统计
+const correctCount = ref(0);
 
-// 4. 加载状态
+// 加载状态
 const isLoading = ref(false);
 const isDataLoaded = ref(false);
 const hasError = ref(false);
 const errorMessage = ref('');
-const isAllAnswered = computed(() => {
-  return questions.value.every(q => q.answered);
-});
+const isAllAnswered = computed(() => questions.value.length !== 0 && questions.value.every(q => q.answered));
 
-// 5. 当前题目计算属性
-const currentQuestion = computed(() => {
-  return questions.value[currentQuestionIndex.value] || {};
-});
+// AI相关状态（优化后）
+const showSummaryModal = ref(false);
+const aiInput = ref('');
+const aiMessages = ref([]); // 新增displayLength和timer字段
+const currentQuestion = computed(() => questions.value[currentQuestionIndex.value] || {});
+const chatContainer = ref(null); // 新增：聊天容器DOM引用
 
-// 6. 格式化时间显示
+// 格式化时间
 const formattedTime = computed(() => {
   const minutes = Math.floor(timeSpent.value / 60);
   const seconds = timeSpent.value % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 });
 
-// 7. 枚举转义：后端枚举→中文显示
+// 题目类型/难度处理
 const formatDifficulty = (difficulty) => {
-  const map = {
-    'BASIC': '简单',
-    'INTERMEDIATE': '中等',
-    'ADVANCED': '困难'
-  };
+  const map = {'BASIC': '简单', 'INTERMEDIATE': '中等', 'ADVANCED': '困难'};
   return map[difficulty] || difficulty;
 };
-
-// 8. 判断题目类型的方法
-const isSingleChoice = (question) => {
-  // 单选题有多个选项，不是判断题
-  return question.answers && question.answers.length > 0
-      && !isTrueFalse(question);
-};
-
+const isSingleChoice = (question) => question.answers?.length > 0 && !isTrueFalse(question);
 const isTrueFalse = (question) => {
-  // 判断题正确答案是"T"或"F"或"true"或"false"
   const rightAnswer = (question.rightAnswer || '').toLowerCase();
-  return rightAnswer === 't' || rightAnswer === 'f'
-      || rightAnswer === 'true' || rightAnswer === 'false';
+  return ['t', 'f', 'true', 'false'].includes(rightAnswer);
 };
-
-const isEssayQuestion = (question) => {
-  // 简答题没有选项
-  return !question.answers || question.answers.length === 0;
-};
-
-// 格式化题目类型显示文本
+const isEssayQuestion = (question) => !question.answers || question.answers.length === 0;
 const formatQuestionType = (question) => {
   if (isSingleChoice(question)) return '单选题';
   if (isTrueFalse(question)) return '判断题';
@@ -490,7 +555,7 @@ const formatQuestionType = (question) => {
   return '未知题型';
 };
 
-// 9. 难度对应颜色
+// 难度颜色
 const difficultyColorClass = computed(() => {
   const map = {
     'BASIC': 'bg-green-600 dark:bg-green-500',
@@ -500,87 +565,175 @@ const difficultyColorClass = computed(() => {
   return map[currentQuestion.value.difficulty] || 'bg-indigo-600 dark:bg-indigo-500';
 });
 
-// 10. 获取单选题正确答案的索引
+// 答案校验
 const getCorrectAnswerIndex = () => {
   if (!currentQuestion.value || !isSingleChoice(currentQuestion.value)) return -1;
-
-  return currentQuestion.value.answers.findIndex(answer =>
-      answer.trim() === currentQuestion.value.rightAnswer.trim()
-  );
+  return currentQuestion.value.answers.findIndex(answer => answer.trim() === currentQuestion.value.rightAnswer.trim());
 };
-
-// 11. 获取判断题正确答案的布尔值
 const getCorrectBooleanAnswer = () => {
   if (!currentQuestion.value || !isTrueFalse(currentQuestion.value)) return true;
   const rightAnswer = currentQuestion.value.rightAnswer.toLowerCase();
   return rightAnswer === 't' || rightAnswer === 'true';
 };
 
-// 12. 页面初始化
+// 核心优化1：增强Markdown格式解析（支持多种标题格式）
+const formatContent = (text) => {
+  if (!text) return '';
+  let formatted = text
+      // 1. 处理块引用（> 开头的内容）
+      .replace(/>(.*?)(\n|$)/g, (match, content) => {
+        // 移除空行的块引用标记
+        if (!content.trim()) return '';
+        return `<blockquote class="border-l-4 border-indigo-400 pl-3 my-2 italic text-slate-700 dark:text-slate-300">${content}</blockquote>`;
+      })
+      // 2. 处理数字标题（1. 2. 3. 带中文描述）
+      // 核心优化：精准匹配### 数字. 标题格式（包含空格和中文）
+      .replace(/###\s+(\d+)\.\s+([^\n]+)(\n|$)/g, '<h3 class="text-base font-semibold mt-3 mb-2 pl-1 border-l-2 border-indigo-500 dark:border-indigo-400">$1. $2</h3>')
+      // 兼容普通### 标题格式
+      .replace(/###\s+([^\n]+)(\n|$)/g, '<h3 class="text-base font-semibold mt-3 mb-2">$1</h3>')
+      .replace(/(\d+.\s+[\u4e00-\u9fa5]+)(\n|$)/g, '<h3 class="text-base font-semibold mt-3 mb-1">$1</h3>')
+      // 3. 处理加粗
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // 4. 处理无序列表（- 开头）
+      .replace(/-(.*?)(\n|$)/g, '<li class="ml-4 list-disc">$1</li>')
+      // 5. 处理分隔线（支持--、---、____）
+      .replace(/---+|--+|____+/g, '<hr class="my-3 border-slate-200 dark:border-slate-700">')
+      // 6. 处理总结标记（✅ 开头）
+      .replace(/✅\s+(.*?)(\n|$)/g, '<p class="font-semibold text-indigo-600 dark:text-indigo-400 mt-2">$1</p>')
+      // 7. 处理换行（保留块级元素后的空行）
+      .replace(/\n/g, '<br>');
+
+  // 8. 包裹列表项（区分有序/无序）
+  // 无序列表
+  if (formatted.includes('<li class="ml-4 list-disc">')) {
+    formatted = formatted.replace(/(<li class="ml-4 list-disc">.*?<\/li>)+/g, '<ul class="my-2">$&</ul>');
+  }
+  // 有序列表（如果存在）
+  if (formatted.includes('<li class="ml-4 list-decimal">')) {
+    formatted = formatted.replace(/(<li class="ml-4 list-decimal">.*?<\/li>)+/g, '<ol class="my-2">$&</ol>');
+  }
+
+  // 9. 清理多余的空标签
+  formatted = formatted.replace(/<br><\/blockquote>/g, '</blockquote>')
+      .replace(/<blockquote><br>/g, '<blockquote>');
+
+  return formatted;
+};
+
+// 核心优化2：打字机过程中实时滚动
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (chatContainer.value) {
+      chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+    }
+  });
+};
+
+// 核心优化3：AI发送消息（支持回车快捷键+空消息校验）
+const handleAISend = async () => {
+  // 空消息校验
+  const content = aiInput.value.trim();
+  if (!currentQuestion.value.answered || !content) return;
+
+  // 添加用户消息
+  aiMessages.value.push({role: 'user', content});
+  aiInput.value = '';
+  scrollToBottom(); // 立即滚动
+
+  // 添加AI消息占位
+  const aiMsgIndex = aiMessages.value.length;
+  aiMessages.value.push({
+    role: 'assistant',
+    content: '',
+    displayLength: 0,
+    timer: null
+  });
+
+  try {
+    request.value.question = currentQuestion.value;
+    request.value.userQuestion = content;
+    const value = JSON.stringify(request.value);
+    const response = await chat(value);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    const currentAiMsg = aiMessages.value[aiMsgIndex];
+
+    // 读取流式数据
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, {stream: true});
+      const assistantMessage = JSON.parse(chunk);
+      currentAiMsg.content += assistantMessage.textContent || "";
+    }
+
+    // 启动打字机（每步更新后滚动）
+    currentAiMsg.timer = setInterval(() => {
+      if (currentAiMsg.displayLength < currentAiMsg.content.length) {
+        currentAiMsg.displayLength += 1;
+        //scrollToBottom(); // 打字过程中实时滚动
+      } else {
+        clearInterval(currentAiMsg.timer);
+        currentAiMsg.timer = null;
+      }
+    }, 50);
+
+  } catch (error) {
+    console.error("AI请求错误:", error);
+    const currentAiMsg = aiMessages.value[aiMsgIndex];
+    currentAiMsg.content = "抱歉，获取回答失败，请重试~";
+    currentAiMsg.displayLength = currentAiMsg.content.length;
+    scrollToBottom();
+  }
+};
+
+
+// 页面初始化
 onMounted(() => {
-  // 同步暗色模式
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  // 暗色模式同步
+  if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
     isDarkMode.value = true;
     document.documentElement.classList.add('dark');
   }
-
-  // 验证题库ID是否存在
+  // 验证题库ID
   if (!bankId.value) {
     hasError.value = true;
     errorMessage.value = '无效的题库ID，请重新选择题库';
     return;
   }
-
-  // 加载题目数据
+  // 加载题目
   loadQuestions();
+  // 答题完成自动弹窗
+  watch(isAllAnswered, (val) => val && (showSummaryModal.value = true), {immediate: true});
+  // 切换题目清空AI输入
+  watch(currentQuestionIndex, () => {
+    aiInput.value = '';
+  });
 });
 
-// 13. 监听组件卸载，清除计时器
-const cleanup = () => {
-  if (timerInterval.value) {
-    clearInterval(timerInterval.value);
-  }
-};
-
-// 14. 加载题目数据
+// 加载题目
 const loadQuestions = async () => {
   isLoading.value = true;
   isDataLoaded.value = false;
   hasError.value = false;
-  errorMessage.value = '';
   correctCount.value = 0;
+  aiMessages.value = []; // 清空对话
+  showSummaryModal.value = false;
 
   try {
-    // 获取题库数据
     const response = await getQuestionBank(bankId);
+    if (response.code !== 200) throw new Error(`服务器错误: ${response.status}`);
 
-    if (response.code !== 200) {
-      throw new Error(`服务器错误: ${response.status} ${response.statusText}`);
-    }
-
-    if (response.data && response.data.questions) {
-      // 处理QuestionDTO数据，添加答题状态
+    if (response.data?.questions) {
       questions.value = response.data.questions.map(q => ({
-        ...q,
-        selected: null,      // 用于选择题
-        answerText: '',      // 用于简答题
-        answered: false,     // 是否已答题
-        isCorrect: false,    // 答案是否正确
-        expectedTime: q.expectedTime || 2
+        ...q, selected: null, answerText: '', answered: false, isCorrect: false, expectedTime: q.expectedTime || 2
       }));
-
-      // 开始计时
       startTimer();
-
-      // 标记数据加载完成
       isDataLoaded.value = true;
-      // 更新页面标题
       document.title = `答题 - ${response.data.name || '未知'}题库 - 知题`;
-    } else {
-      throw new Error('获取题目数据失败');
-    }
+    } else throw new Error('获取题目失败');
   } catch (error) {
-    console.error('加载题目失败:', error);
+    console.error('加载失败:', error);
     hasError.value = true;
     errorMessage.value = `加载失败: ${error.message}`;
   } finally {
@@ -588,123 +741,81 @@ const loadQuestions = async () => {
   }
 };
 
-// 15. 开始计时器
+// 计时器
 const startTimer = () => {
-  if (timerInterval.value) {
-    clearInterval(timerInterval.value);
-  }
-
-  timerInterval.value = setInterval(() => {
-    timeSpent.value++;
-  }, 1000);
+  timerInterval.value && clearInterval(timerInterval.value);
+  timerInterval.value = setInterval(() => timeSpent.value++, 1000);
 };
 
-// 16. 切换暗色模式
+// 基础交互
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value;
   document.documentElement.classList.toggle('dark', isDarkMode.value);
 };
-
-// 17. 答题操作 - 单选题选择
-const selectOption = (index) => {
-  currentQuestion.value.selected = index;
-};
-
-// 18. 答题操作 - 判断题选择
-const selectBooleanOption = (value) => {
-  currentQuestion.value.selected = value;
-};
-
-// 19. 答题操作 - 标记为已答（用于简答题）
+const selectOption = (index) => currentQuestion.value.selected = index;
+const selectBooleanOption = (value) => currentQuestion.value.selected = value;
 const markAsAnswered = () => {
-  // 简答题只要有输入就可以提交
-};
-
-// 20. 提交当前题目答案
+}; // 简答题标记
 const submitCurrentQuestion = () => {
   if (currentQuestion.value.answered) return;
-
   let isCorrect = false;
 
-  // 判断答案是否正确
   if (isSingleChoice(currentQuestion.value)) {
-    // 单选题：比较选中的索引与正确答案
     isCorrect = currentQuestion.value.selected === getCorrectAnswerIndex();
   } else if (isTrueFalse(currentQuestion.value)) {
-    // 判断题：比较选中的布尔值与正确答案
     isCorrect = currentQuestion.value.selected === getCorrectBooleanAnswer();
   } else if (isEssayQuestion(currentQuestion.value)) {
-    // 简答题：这里简化处理，实际应用中可能需要更复杂的比较逻辑
-    isCorrect = currentQuestion.value.answerText.trim().toLowerCase() ===
-        currentQuestion.value.rightAnswer.trim().toLowerCase();
+    isCorrect = currentQuestion.value.answerText.trim().toLowerCase() === currentQuestion.value.rightAnswer.trim().toLowerCase();
   }
 
-  // 更新题目状态
   currentQuestion.value.answered = true;
   currentQuestion.value.isCorrect = isCorrect;
-
-  // 更新正确题数统计
-  if (isCorrect) {
-    correctCount.value++;
-  }
+  isCorrect && correctCount.value++;
 };
 
-// 21. 题目导航 - 上一题
+// 题目导航
 const prevQuestion = () => {
-  if (currentQuestionIndex.value > 0) {
-    currentQuestionIndex.value--;
-    scrollToTop();
-  }
+  currentQuestionIndex.value > 0 && (currentQuestionIndex.value--);
+  scrollToTop();
 };
-
-// 22. 题目导航 - 下一题
 const nextQuestion = () => {
-  if (currentQuestionIndex.value < totalQuestions.value - 1) {
-    currentQuestionIndex.value++;
-    scrollToTop();
-  }
+  currentQuestionIndex.value < totalQuestions.value - 1 && (currentQuestionIndex.value++);
+  scrollToTop();
 };
-
-// 23. 题目导航 - 跳转到指定题目（任何题目都可以跳转）
 const goToQuestion = (index) => {
   currentQuestionIndex.value = index;
   scrollToTop();
 };
+const scrollToTop = () => window.scrollTo({top: 0, behavior: 'smooth'});
 
-// 24. 滚动到顶部
-const scrollToTop = () => {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
-};
-
-// 25. 重新开始答题
+// 重新答题
 const restartQuiz = () => {
   loadQuestions();
   currentQuestionIndex.value = 0;
   timeSpent.value = 0;
   startTimer();
+  showSummaryModal.value = false;
 };
 
-// 组件卸载时清除计时器
-watch(
-    () => route,
-    (newRoute) => {
-      if (newRoute.name !== 'QuizTaking') {
-        cleanup();
-      }
-    }
-);
+// 组件卸载清理（新增AI定时器清除）
+watch(route, (newRoute) => {
+  if (newRoute.name !== 'QuizTaking') {
+    // 清除答题计时器
+    timerInterval.value && clearInterval(timerInterval.value);
+    // 清除所有AI打字定时器
+    aiMessages.value.forEach(msg => {
+      msg.timer && clearInterval(msg.timer);
+    });
+  }
+});
 </script>
 
 <style scoped>
-/* 平滑滚动 */
+/* 基础样式 */
 html {
   scroll-behavior: smooth;
 }
 
-/* 滚动条样式优化 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -731,7 +842,6 @@ html {
   background: #64748b;
 }
 
-/* 加载动画 */
 .animate-pulse {
   animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -745,9 +855,61 @@ html {
   }
 }
 
-/* 按钮禁用状态 */
-button:disabled {
+button:disabled, input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* AI对话区样式强化 */
+.ai-message-user {
+  border-left: 3px solid #6366f1;
+}
+
+.ai-message-ai {
+  border-left: 3px solid #10b981;
+}
+
+/* 弹窗关闭按钮hover效果优化 */
+.modal-close-btn:hover {
+  transform: scale(1.1);
+}
+
+/* 核心优化：格式化内容样式补充 */
+h3 {
+  margin: 0.5rem 0 !important;
+  color: inherit !important;
+  font-size: 1em !important;
+}
+
+ul {
+  padding-left: 1.5rem !important;
+}
+
+li {
+  margin: 0.3rem 0 !important;
+}
+
+h3 {
+  margin-top: 0.75rem !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1.5 !important;
+}
+
+hr {
+  margin: 0.75rem 0 !important;
+}
+
+/* 光标样式优化 */
+.animate-pulse {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  from, to {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 </style>
