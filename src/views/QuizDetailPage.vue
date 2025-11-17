@@ -1,31 +1,7 @@
 <template>
   <div
       class="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 text-slate-900 dark:text-slate-50 transition-colors duration-300">
-    <!-- 导航栏 -->
-    <header
-        class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm sticky top-0 z-30 border-b border-slate-200 dark:border-slate-700">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center">
-            <router-link to="/" class="flex items-center gap-2">
-              <i class="fa fa-book text-2xl text-indigo-600 dark:text-indigo-400"></i>
-              <span class="text-xl font-bold">知题</span>
-            </router-link>
-          </div>
-
-          <div class="flex items-center gap-4">
-            <button @click="toggleDarkMode"
-                    class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <i class="fa" :class="isDarkMode ? 'fa-sun-o' : 'fa-moon-o'"></i>
-            </button>
-            <div class="relative">
-              <img src="https://picsum.photos/id/64/40/40" alt="用户头像"
-                   class="w-8 h-8 rounded-full object-cover border-2 border-indigo-500 cursor-pointer">
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
+    <quiz-header></quiz-header>
 
     <!-- 主内容区 -->
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -234,6 +210,7 @@
 import {ref, onMounted, computed} from 'vue';
 import {useRouter, useRoute} from 'vue-router';
 import {getQuestionBank} from "@/api/question.js";
+import QuizHeader from "@/components/QuizHeader.vue";
 
 // 1. 基础状态
 const isDarkMode = ref(false);

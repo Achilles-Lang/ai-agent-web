@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // 创建axios实例
-const BASE_API = "http://localhost:8123";
+const BASE_API = "http://localhost:8081";
 
 const service = axios.create({
     baseURL: BASE_API, // 从环境变量获取基础URL
@@ -12,7 +12,8 @@ const service = axios.create({
 service.interceptors.request.use(
     config => {
         // 可以在这里添加请求头，如Token
-        // config.headers['Authorization'] = 'Bearer ' + getToken()
+        const token = localStorage.getItem('USER_TOKEN');
+        config.headers['Authorization'] = 'Bearer ' + token
         return config
     },
     error => {

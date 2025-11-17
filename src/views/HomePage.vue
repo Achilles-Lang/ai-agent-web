@@ -1,39 +1,11 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 text-slate-900 dark:text-slate-50 transition-colors duration-300">
-    <!-- 导航栏（保持不变） -->
-    <header class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm sticky top-0 z-30 border-b border-slate-200 dark:border-slate-700">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center">
-            <router-link to="/" class="flex items-center gap-2">
-              <i class="fa fa-book text-2xl text-indigo-600 dark:text-indigo-400"></i>
-              <span class="text-xl font-bold">知题</span>
-            </router-link>
-          </div>
-
-          <div class="flex items-center gap-4">
-            <button class="hidden md:flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <i class="fa fa-history"></i>
-              <span>生成记录</span>
-            </button>
-            <button class="hidden md:flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <i class="fa fa-bookmark-o"></i>
-              <span>我的收藏</span>
-            </button>
-            <button @click="toggleDarkMode" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <i class="fa" :class="isDarkMode ? 'fa-sun-o' : 'fa-moon-o'"></i>
-            </button>
-            <div class="relative">
-              <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-indigo-500 cursor-pointer">
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
-
+  <div
+      class="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 text-slate-900 dark:text-slate-50 transition-colors duration-300"
+  >
+    <QuizHeader></QuizHeader>
     <!-- 主内容区 -->
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <!-- 标题区域（文案适配题库生成功能） -->
+      <!-- 标题区域 -->
       <div class="text-center mb-10 max-w-3xl mx-auto">
         <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 leading-tight">
           专属题库生成器
@@ -43,10 +15,10 @@
         </p>
       </div>
 
-      <!-- 题库生成框（替换原搜索框） -->
+      <!-- 题库生成框 -->
       <div class="max-w-2xl mx-auto mb-12 relative">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <i class="fa fa-list-alt text-slate-400"></i> <!-- 图标替换为题库相关 -->
+          <i class="fa fa-list-alt text-slate-400"></i>
         </div>
         <input
             v-model="generatorQuery"
@@ -63,7 +35,7 @@
         </button>
       </div>
 
-      <!-- 热门分类区域（泛化种类+增加行数） -->
+      <!-- 热门分类区域 -->
       <div class="mb-16">
         <h2 class="text-2xl font-bold mb-6 text-center">热门分类（覆盖多领域）</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -194,7 +166,7 @@
               colorClass="bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400"
           />
 
-          <!-- 编程技术类（保留核心，减少占比） -->
+          <!-- 编程技术类 -->
           <CategoryCard
               @click="navigateToCategory('java')"
               icon="fa-java"
@@ -225,56 +197,12 @@
           />
         </div>
       </div>
-
-      <!-- 推荐练习模块（已删除） -->
     </main>
-
-    <!-- 页脚（保持不变） -->
-    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-8 mt-16">
+    <!-- 简化的页脚（保留简洁性） -->
+    <footer
+        class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm py-5 border-t border-slate-200 dark:border-slate-700 mt-10">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <div class="flex items-center gap-2 mb-4">
-              <i class="fa fa-book text-xl text-indigo-600 dark:text-indigo-400"></i>
-              <span class="text-lg font-bold">知题</span>
-            </div>
-            <p class="text-sm text-slate-600 dark:text-slate-400">
-              提供海量题库资源，助力学习成长，提升应试能力
-            </p>
-          </div>
-
-          <div>
-            <h3 class="font-semibold mb-4">分类</h3>
-            <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-              <li><a href="#" @click.prevent="navigateToCategory('chinese')" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">学科知识</a></li>
-              <li><a href="#" @click.prevent="navigateToCategory('law')" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">职业资格</a></li>
-              <li><a href="#" @click.prevent="navigateToCategory('art')" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">艺术体育</a></li>
-              <li><a href="#" @click.prevent="navigateToCategory('java')" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">技术编程</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 class="font-semibold mb-4">功能</h3>
-            <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-              <li><a href="#" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">每日一练</a></li>
-              <li><a href="#" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">模拟考试</a></li>
-              <li><a href="#" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">错题集</a></li>
-              <li><a href="#" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">学习计划</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 class="font-semibold mb-4">关于</h3>
-            <ul class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-              <li><a href="#" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">关于我们</a></li>
-              <li><a href="#" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">联系我们</a></li>
-              <li><a href="#" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">用户反馈</a></li>
-              <li><a href="#" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">隐私政策</a></li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="border-t border-slate-200 dark:border-slate-700 mt-8 pt-6 text-center text-sm text-slate-500 dark:text-slate-500">
+        <div class="text-center text-sm text-slate-500 dark:text-slate-500">
           <p>© 知题 - 让学习更高效</p>
         </div>
       </div>
@@ -283,50 +211,36 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import {ref, onMounted} from 'vue';
+import {useRouter} from 'vue-router';
 import CategoryCard from '@/components/CategoryCard.vue';
+import QuizHeader from "@/components/QuizHeader.vue";
+const generatorQuery = ref('');
 
-// 状态管理（替换原searchQuery为generatorQuery）
-const isDarkMode = ref(false);
-const generatorQuery = ref(''); // 题库生成框输入值
 const router = useRouter();
 
-// 检查系统暗色模式偏好（保持不变）
-onMounted(() => {
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    isDarkMode.value = true;
-    document.documentElement.classList.add('dark');
-  }
-});
-
-// 切换暗色模式（保持不变）
-const toggleDarkMode = () => {
-  isDarkMode.value = !isDarkMode.value;
-  document.documentElement.classList.toggle('dark', isDarkMode.value);
-};
-
-// 处理题库生成（替换原handleSearch）
+// 处理题库生成
 const handleGenerator = () => {
   if (generatorQuery.value.trim()) {
     router.push({
-      name: 'QuestionBankGenerator', // 跳转题库生成页
-      params: { category:generatorQuery.value }
+      name: 'QuestionBankGenerator',
+      params: {category: generatorQuery.value}
     });
   }
 };
 
-// 导航到分类专属题库生成页（保持逻辑，适配泛化分类）
+// 导航到分类专属题库生成页
 const navigateToCategory = (category) => {
   router.push({
     name: 'QuestionBankGenerator',
-    params: { category }
+    params: {category}
   });
 };
+
 </script>
 
 <style scoped>
-/* 全局样式补充（保持不变） */
+/* 全局样式补充 */
 * {
   box-sizing: border-box;
 }

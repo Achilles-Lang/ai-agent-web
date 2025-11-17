@@ -1,45 +1,22 @@
 <template>
   <div
       class="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 text-slate-900 dark:text-slate-50 transition-colors duration-300">
-    <!-- 导航栏（保持不变） -->
-    <header
-        class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm sticky top-0 z-30 border-b border-slate-200 dark:border-slate-700">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center">
-            <router-link to="/" class="flex items-center gap-2">
-              <i class="fa fa-book text-2xl text-indigo-600 dark:text-indigo-400"></i>
-              <span class="text-xl font-bold">知题</span>
-            </router-link>
-          </div>
-          <div class="flex items-center gap-4">
-            <button @click="toggleDarkMode"
-                    class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <i class="fa" :class="isDarkMode ? 'fa-sun-o' : 'fa-moon-o'"></i>
-            </button>
-            <div class="relative">
-              <img src="https://picsum.photos/id/64/40/40" alt="用户头像"
-                   class="w-8 h-8 rounded-full object-cover border-2 border-indigo-500 cursor-pointer">
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
+    <quiz-header></quiz-header>
 
     <!-- 主内容区 -->
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="max-w-2xl mx-auto">
-        <!-- 页面标题（优化：基于路径参数，避免重复“题库”） -->
+        <!-- 页面标题 -->
         <div class="text-center mb-8">
           <h1 class="text-3xl font-bold mb-2">生成{{ categoryTitle }}题库</h1>
           <p class="text-slate-600 dark:text-slate-400">配置参数后，系统将为您生成专属题库</p>
         </div>
 
-        <!-- 1. 生成配置表单（核心优化点：预填名称+默认难度） -->
+        <!-- 生成配置表单 -->
         <div v-if="!isGenerating && !hasError"
              class="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-md mb-8">
           <form @submit.prevent="submitGenerateForm" class="space-y-6">
-            <!-- 题库名称（优化：预填路径参数，用户可修改） -->
+            <!-- 题库名称 -->
             <div>
               <label for="bankName"
                      class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">题库名称（可选）</label>
@@ -53,7 +30,7 @@
               <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">不填写将自动生成（格式：分类_难度_题数_日期）</p>
             </div>
 
-            <!-- 题目数量（保持不变） -->
+            <!-- 题目数量 -->
             <div>
               <label for="totalCount"
                      class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">题目数量（必填）</label>
@@ -68,10 +45,15 @@
                   class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   :disabled="isSubmitting"
               >
-              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">范围：5-100道，步长5道</p>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                范围：5-100道，步长5道
+                <span class="text-indigo-600 dark:text-indigo-400">
+                  预计生成时间：{{ estimatedTime }}秒
+                </span>
+              </p>
             </div>
 
-            <!-- 题库总难度（优化：默认选中“基础-简单”，无需手选） -->
+            <!-- 题库总难度 -->
             <div>
               <label for="overallDifficulty" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">题库总难度（必填）</label>
               <select
@@ -88,7 +70,7 @@
               </select>
             </div>
 
-            <!-- 提交按钮（保持不变） -->
+            <!-- 提交按钮 -->
             <button
                 type="submit"
                 class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors flex items-center justify-center gap-2"
@@ -101,7 +83,7 @@
           </form>
         </div>
 
-        <!-- 2. 生成状态展示（保持不变） -->
+        <!-- 生成状态展示 -->
         <div v-if="isGenerating || hasError" class="text-center">
           <!-- 生成中状态 -->
           <div v-if="!hasError"
@@ -126,9 +108,13 @@
             <div class="flex justify-between text-sm text-slate-500 dark:text-slate-500">
               <div>
                 已用时: {{ loadingTime }}秒
-                <span v-if="loadingTime > 30" class="text-amber-500 ml-2">加载时间较长</span>
+                <span v-if="loadingTime > estimatedTime" class="text-amber-500 ml-2">
+                  超出预计时间{{ Math.round(loadingTime - estimatedTime) }}秒
+                </span>
               </div>
-              <div>进度: {{ Math.round(progress) }}%</div>
+              <div>
+                预计剩余: {{ Math.max(0, estimatedTime - loadingTime) }}秒
+              </div>
             </div>
           </div>
 
@@ -162,7 +148,7 @@
       </div>
     </main>
 
-    <!-- 页脚（保持不变） -->
+    <!-- 页脚 -->
     <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 mt-16">
       <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500 dark:text-slate-500">
         <p>© 2023 知题 - 让学习更高效</p>
@@ -172,23 +158,25 @@
 </template>
 
 <script setup>
-import {ref, onMounted, computed, onUnmounted} from 'vue';
-import {useRouter, useRoute} from 'vue-router';
+import {computed, onMounted, onUnmounted, ref} from 'vue';
+import {useRoute, useRouter} from 'vue-router';
 import {generateQuestionBank, queryTaskStatus} from "@/api/question.js";
+import QuizHeader from "@/components/QuizHeader.vue";
 
-// 1. 基础状态管理（新增route获取路径参数）
+// 基础状态管理
 const isDarkMode = ref(false);
 const router = useRouter();
-const route = useRoute(); // 用于获取页面路径参数
+const route = useRoute();
 
-// 2. 表单数据（核心优化1：默认难度设为BASIC（简单））
+// 表单数据
 const form = ref({
-  name: '', // 题库名称（将通过路径参数预填）
-  questionCount: 10, // 题目数量（默认10道）
-  difficulty: 'BASIC' // 总难度默认：基础（简单），对应选项value为BASIC
+  userId: 0,
+  name: '',
+  questionCount: 10,
+  difficulty: 'BASIC'
 });
 
-// 3. 生成过程状态（保持不变）
+// 生成过程状态
 const isSubmitting = ref(false);
 const isGenerating = ref(false);
 const hasError = ref(false);
@@ -197,48 +185,47 @@ const loadingTime = ref(0);
 const progress = ref(0);
 const taskId = ref(null);
 const taskStatusText = ref('正在收集和整理相关题目...');
-const maxLoadingTime = ref(120);
+const estimatedTime = computed(() => form.value.questionCount * 3); // 每道题预计3秒
+const pollStartTime = computed(() => Math.max(0, estimatedTime.value - 10)); // 开始轮询的时间点
 
-// 4. 计时器（保持不变）
+// 计时器
 const loadingTimer = ref(null);
 const pollTimer = ref(null);
+const prePollTimer = ref(null); // 轮询前的计时器
 
-// 5. 计算属性（核心优化2：基于路径参数生成标题，避免重复“题库”）
+// 计算属性
 const categoryTitle = computed(() => {
-  // 优先从路径params获取分类（如 /generator/java → params.category=java）
-  // 其次从query获取主题（如 /generator?theme=Python基础 → query.theme=Python基础）
   const rawCategory = route.params.category || (route.query.theme ? route.query.theme.replace('题库', '') : '');
-
-  if (!rawCategory) return '自定义'; // 无参数时显示“自定义”
-
-  // 首字母大写（如 java → Java，python基础 → Python基础）
+  if (!rawCategory) return '自定义';
   return rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1);
 });
 
-// 6. 页面初始化（核心优化3：路径参数预填题库名称）
+// 页面初始化
 onMounted(() => {
-  // 处理暗色模式（保持不变）
+  // 处理暗色模式
   if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
     isDarkMode.value = true;
     document.documentElement.classList.add('dark');
   }
 
-  // 从路径参数预填题库名称（格式：[分类名称]题库）
+  // 从路径参数预填题库名称
   const rawCategory = route.params.category || (route.query.theme ? route.query.theme.replace('题库', '') : '');
   if (rawCategory) {
-    const formattedName = `${categoryTitle.value}题库`; // 如 Java → Java题库，Python基础 → Python基础题库
-    form.value.name = formattedName; // 预填到输入框，用户可修改
+    const formattedName = `${categoryTitle.value}题库`;
+    form.value.name = formattedName;
   } else {
-    form.value.name = '自定义题库'; // 无参数时给默认值，提升用户体验
+    form.value.name = '自定义题库';
   }
 });
 
-// 7. 核心方法：提交生成表单（保持不变）
+// 提交生成表单
 const submitGenerateForm = async () => {
   if (isSubmitting.value) return;
   isSubmitting.value = true;
 
   try {
+    form.value.userId = localStorage.getItem('USER_ID');
+    console.log(form.value);
     const request = JSON.stringify(form.value);
     const response = await generateQuestionBank(request);
 
@@ -255,7 +242,7 @@ const submitGenerateForm = async () => {
   }
 };
 
-// 8. 开始生成流程（保持不变）
+// 开始生成流程
 const startGenerateProcess = () => {
   isSubmitting.value = false;
   isGenerating.value = true;
@@ -266,17 +253,36 @@ const startGenerateProcess = () => {
   // 加载时长计时器
   loadingTimer.value = setInterval(() => {
     loadingTime.value++;
-    if (loadingTime.value >= maxLoadingTime.value) {
+    // 基于时间估算进度（直到开始轮询）
+    if (!pollTimer.value && loadingTime.value < pollStartTime.value) {
+      const estimatedProgress = (loadingTime.value / estimatedTime.value) * 100;
+      progress.value = Math.min(90, Math.max(progress.value, estimatedProgress));
+
+      // 更新状态文本
+      if (progress.value < 30) taskStatusText.value = '正在收集和整理相关题目...';
+      else if (progress.value < 70) taskStatusText.value = '正在筛选匹配难度的题目...';
+      else taskStatusText.value = '正在校验题目完整性...';
+    }
+
+    // 设置最大超时时间为预计时间的2倍
+    if (loadingTime.value >= estimatedTime.value * 2) {
       handleError('生成超时，请稍后重试');
     }
   }, 1000);
 
-  // 状态轮询
-  checkTaskStatus();
-  pollTimer.value = setInterval(checkTaskStatus, 3000);
+  // 预轮询计时器 - 等待到指定时间后开始轮询
+  prePollTimer.value = setInterval(() => {
+    if (loadingTime.value >= pollStartTime.value) {
+      clearInterval(prePollTimer.value);
+      prePollTimer.value = null;
+      // 开始轮询
+      checkTaskStatus();
+      pollTimer.value = setInterval(checkTaskStatus, 3000); // 3秒轮询一次
+    }
+  }, 1000);
 };
 
-// 9. 轮询后端任务状态（保持不变）
+// 轮询后端任务状态
 const checkTaskStatus = async () => {
   if (!taskId.value) return;
 
@@ -290,7 +296,12 @@ const checkTaskStatus = async () => {
     const task = response.data;
     switch (task.status) {
       case 'PROCESSING':
-        progress.value = task.progress !== undefined ? task.progress : (progress.value < 95 ? progress.value + 1 : 95);
+        // 使用后端返回的进度，如果没有则基于时间估算
+        progress.value = task.progress !== undefined ?
+            Math.min(95, task.progress) :
+            Math.min(95, (loadingTime.value / estimatedTime.value) * 100);
+
+        // 更新状态文本
         if (progress.value < 30) taskStatusText.value = '正在收集和整理相关题目...';
         else if (progress.value < 70) taskStatusText.value = '正在筛选匹配难度的题目...';
         else taskStatusText.value = '正在校验题目完整性，即将完成...';
@@ -316,7 +327,7 @@ const checkTaskStatus = async () => {
   }
 };
 
-// 10. 错误处理（保持不变）
+// 错误处理
 const handleError = (msg) => {
   hasError.value = true;
   errorMessage.value = msg;
@@ -324,15 +335,14 @@ const handleError = (msg) => {
   stopAllTimers();
 };
 
-// 11. 重置表单并重试（优化：重置后仍保留默认难度和预填名称）
+// 重置表单并重试
 const resetFormAndRetry = () => {
   hasError.value = false;
   errorMessage.value = '';
-  form.value.questionCount = 10; // 仅重置题目数量
-  // 保留默认难度（BASIC）和预填的题库名称，避免用户重复操作
+  // 保留用户设置的题目数量和难度
 };
 
-// 12. 停止所有计时器（保持不变）
+// 停止所有计时器
 const stopAllTimers = () => {
   if (loadingTimer.value) {
     clearInterval(loadingTimer.value);
@@ -342,15 +352,19 @@ const stopAllTimers = () => {
     clearInterval(pollTimer.value);
     pollTimer.value = null;
   }
+  if (prePollTimer.value) {
+    clearInterval(prePollTimer.value);
+    prePollTimer.value = null;
+  }
 };
 
-// 13. 切换暗色模式（保持不变）
+// 切换暗色模式
 const toggleDarkMode = () => {
   isDarkMode.value = !isDarkMode.value;
   document.documentElement.classList.toggle('dark', isDarkMode.value);
 };
 
-// 14. 组件卸载（保持不变）
+// 组件卸载
 onUnmounted(() => {
   stopAllTimers();
 });

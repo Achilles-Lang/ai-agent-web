@@ -1,17 +1,8 @@
 import request from '@/utils/request'
 
-// 获取单个问题
-export function createQuestion(prompt) {
-    return request({
-        url: 'api/question/create',
-        method: 'get',
-        params: {"prompt": prompt}
-    })
-}
-
 export function generateQuestionBank(quizRequest) {
     return request({
-        url: 'api/question-bank/generate',
+        url: 'question/generate',
         headers: {
             'Content-Type': 'application/json'
         },
@@ -22,7 +13,7 @@ export function generateQuestionBank(quizRequest) {
 
 export function queryTaskStatus(taskId) {
     return request({
-        url: 'api/question-bank/task/status',
+        url: 'question/task/status',
         method: 'get',
         params: {
             'taskId': taskId
@@ -32,7 +23,17 @@ export function queryTaskStatus(taskId) {
 
 export function getQuestionBank(bankId) {
     return request({
-        url: `/api/question-bank/${bankId.value}`,
+        url: `question/${bankId.value}`,
         method: 'get'
+    })
+}
+
+export function getQuestionBanksByUserId(userId) {
+    return request({
+        url: 'question/user/banks',
+        method: 'get',
+        params: {
+            'userId': userId
+        }
     })
 }

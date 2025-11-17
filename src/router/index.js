@@ -6,29 +6,47 @@ import HomePage from '../views/HomePage.vue'  // 假设这是你的"第一个Vue
 import Practice from '../views/QuestionPractice.vue'  // 刷题平台主界面
 import QuizDetailPage from '../views/QuizDetailPage.vue';
 import QuestionBankGenerator from "@/views/QuestionBankGenerator.vue";
+import LoginPage from "@/views/LoginPage.vue";
+import QuizListPage from "@/views/QuizListPage.vue";
 
 // 路由规则
 const routes = [
     {
         path: '/',  // 首页路由（第一个页面）
-        name: 'Page',
-        component: HomePage
+        name: 'Home',
+        component: HomePage,
+        meta: {requiresAuth: true}
     },
     {
         path: '/questions/:businessId',
         name: 'QuizTaking',
-        component: Practice
+        component: Practice,
+        meta: {requiresAuth: true}
     },
     {
         path: '/categories/:businessId',
         name: 'QuizDetail',
         component: QuizDetailPage,
-        props: true // 允许将路由参数作为组件props传递
+        props: true,
+        meta: {requiresAuth: true}
     },
     {
         path: '/question-bank/generate/:category',
         name: 'QuestionBankGenerator',
-        component: QuestionBankGenerator
+        component: QuestionBankGenerator,
+        meta: {requiresAuth: true}
+    },
+    {
+        path: '/login',
+        name: 'Login',
+        component: LoginPage,
+        meta: {requiresAuth: true}
+    },
+    {
+        path: '/quizList',
+        name: 'QuizList',
+        component: QuizListPage,
+        meta: {requiresAuth: true}
     }
 ]
 
