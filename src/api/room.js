@@ -38,3 +38,11 @@ export function getHistoryMessages(roomId) {
         params: { roomId }
     })
 }
+// 5.添加AI角色到房间
+export function addAiToRoom(data) {
+    return request({
+        url:'room/addAi',
+        method:'post',
+        data: data
+    })
+}

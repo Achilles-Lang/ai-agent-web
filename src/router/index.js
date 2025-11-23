@@ -17,7 +17,7 @@ const routes = [
         path: '/login',
         name: 'Login',
         component: LoginPage,
-        meta: { requiresAuth: true, title: '登录' }
+        meta: { requiresAuth: false, title: '登录' }
     },
     {
         path: '/chat',

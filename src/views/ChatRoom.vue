@@ -23,7 +23,7 @@
                 :class="currentRoom?.id === room.id ? 'bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600' : 'hover:bg-slate-200 dark:hover:bg-slate-700/50'"
             >
               <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
-                {{ room.roomName.charAt(0) }}
+                {{ room.roomName ? room.roomName.charAt(0) : '#' }}
               </div>
               <div class="flex-1 min-w-0">
                 <h4 class="font-medium truncate">{{ room.roomName }}</h4>
@@ -34,7 +34,7 @@
         </div>
 
         <div class="flex-1 flex flex-col bg-white dark:bg-slate-800">
-          <div class="h-16 px-6 flex items-center border-b border-slate-200 dark:border-slate-700">
+          <div class="h-16 px-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
             <div v-if="currentRoom">
               <h2 class="text-lg font-bold">{{ currentRoom.roomName }}</h2>
               <p class="text-xs text-slate-500 flex items-center gap-1">
@@ -42,6 +42,14 @@
               </p>
             </div>
             <div v-else class="text-slate-500">请选择一个房间开始聊天</div>
+
+            <button
+                v-if="currentRoom"
+                @click="handleAddAi"
+                class="px-3 py-1.5 text-sm bg-purple-100 text-purple-600 hover:bg-purple-200 rounded-lg transition-colors font-medium flex items-center gap-1"
+            >
+              <i class="fa fa-magic"></i> 召唤AI
+            </button>
           </div>
 
           <div ref="msgContainer" class="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/20">
@@ -57,7 +65,8 @@
                   class="flex gap-4"
                   :class="msg.senderId == myUserId ? 'flex-row-reverse' : ''"
               >
-                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-md"
+                     :class="getAvatarColor(msg.senderName)">
                   {{ msg.senderName ? msg.senderName.charAt(0) : '?' }}
                 </div>
 
@@ -105,9 +114,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import QuizHeader from "@/components/QuizHeader.vue";
-import { createRoom, getRoomList, sendMessage, getHistoryMessages } from "@/api/room.js";
+// 引入了 addAiToRoom
+import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom } from "@/api/room.js";
 
 const rooms = ref([]);
 const currentRoom = ref(null);
@@ -118,7 +128,6 @@ const userInfo = JSON.parse(localStorage.getItem('USER_INFO') || '{}');
 const msgContainer = ref(null);
 let pollTimer = null;
 
-// 1. 加载房间列表
 const loadRooms = async () => {
   try {
     const res = await getRoomList();
@@ -130,44 +139,70 @@ const loadRooms = async () => {
   }
 };
 
-// 2. 创建新房间
 const handleCreateRoom = async () => {
   const name = prompt("请输入新房间的名字：");
   if (name) {
     await createRoom(name);
-    await loadRooms(); // 刷新列表
+    await loadRooms();
   }
 };
 
-// 3. 选择房间
-const selectRoom = async (room) => {
-  currentRoom.value = room;
-  messages.value = []; // 清空旧消息
-  await loadMessages(); // 立即加载一次
-  scrollToBottom();
+// 【新增】处理添加 AI 的逻辑
+const handleAddAi = async () => {
+  if (!currentRoom.value) return;
 
-  // 启动轮询（每2秒去后台问一次有没有新消息）
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(loadMessages, 2000);
+  const name = prompt("1. 给 AI 起个名字（如：DeepSeek大神）：");
+  if (!name) return;
+
+  const promptText = prompt("2. 设定人设（如：你是一个严谨的程序员）：");
+  if (!promptText) return;
+
+  const userKey = prompt("3. [可选] 输入你的阿里云 API Key (不填则用系统默认)：");
+  const model = prompt("4. [可选] 输入模型名称 (如 deepseek-v3, deepseek-r1, qwen-max)：", "qwen-plus");
+
+  try {
+    await addAiToRoom({
+      roomId: currentRoom.value.id,
+      aiName: name,
+      systemPrompt: promptText,
+      apiKey: userKey,
+      modelName: model
+    });
+    alert(`成功召唤了 ${name}！`);
+  } catch (e) {
+    console.error(e);
+    alert("召唤失败");
+  }
 };
 
-// 4. 加载消息
+const selectRoom = async (room) => {
+  currentRoom.value = room;
+  messages.value = [];
+  await loadMessages();
+  scrollToBottom();
+
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(loadMessages, 1000); // 1秒轮询
+};
+
 const loadMessages = async () => {
   if (!currentRoom.value) return;
   try {
     const res = await getHistoryMessages(currentRoom.value.id);
     if (res.code === 200) {
-      // 简单的全量替换，实际优化可以做增量
-      const isAtBottom = isScrollAtBottom();
-      messages.value = res.data;
-      if (isAtBottom) scrollToBottom();
+      const newMessages = res.data;
+      if (newMessages.length > messages.value.length) {
+        messages.value = newMessages;
+        scrollToBottom();
+      } else {
+        messages.value = newMessages;
+      }
     }
   } catch (e) {
     console.error(e);
   }
 };
 
-// 5. 发送消息
 const handleSend = async () => {
   const content = inputContent.value.trim();
   if (!content || !currentRoom.value) return;
@@ -179,19 +214,28 @@ const handleSend = async () => {
     content: content
   };
 
-  // 先清空输入框，让体验更好
   inputContent.value = "";
 
   try {
     await sendMessage(msgData);
-    await loadMessages(); // 发送完立刻刷新
+    await loadMessages();
     scrollToBottom();
   } catch (e) {
     alert("发送失败");
   }
 };
 
-// 滚动到底部工具
+// 简单的头像颜色生成器
+const getAvatarColor = (name) => {
+  if (!name) return 'bg-gray-400';
+  if (name === '我' || name === userInfo.nickname) return 'bg-indigo-500';
+  if (name.includes('AI')) return 'bg-purple-500';
+  if (name.includes('DeepSeek')) return 'bg-blue-600';
+  if (name.includes('元宝')) return 'bg-green-500';
+  if (name.includes('豆包')) return 'bg-orange-500';
+  return 'bg-indigo-400'; // 默认
+}
+
 const scrollToBottom = () => {
   nextTick(() => {
     if (msgContainer.value) {
@@ -200,7 +244,6 @@ const scrollToBottom = () => {
   });
 };
 
-// 判断是否在底部
 const isScrollAtBottom = () => {
   if (!msgContainer.value) return true;
   const { scrollTop, scrollHeight, clientHeight } = msgContainer.value;
