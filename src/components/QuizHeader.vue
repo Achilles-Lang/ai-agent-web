@@ -8,24 +8,11 @@
         <div class="flex items-center">
           <router-link to="/" class="flex items-center gap-2">
             <i class="fa fa-book text-2xl text-indigo-600 dark:text-indigo-400"></i>
-            <span class="text-xl font-bold">知题</span>
+            <span class="text-xl font-bold">roles-chat-ai</span>
           </router-link>
         </div>
 
         <div class="flex items-center gap-4">
-          <button
-              @click="toRecord"
-              class="hidden md:flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            <i class="fa fa-history"></i>
-            <span>生成记录</span>
-          </button>
-          <button
-              class="hidden md:flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            <i class="fa fa-bookmark-o"></i>
-            <span>我的收藏</span>
-          </button>
           <button
               @click="toggleDarkMode"
               class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"

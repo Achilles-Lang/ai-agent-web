@@ -187,7 +187,6 @@
 import {ref, onMounted} from 'vue';
 import {useRouter} from 'vue-router';
 import axios from 'axios';
-import {generateQuestionBank} from "@/api/question.js";
 import {login, register} from "@/api/user.js";
 import HomePage from "@/views/HomePage.vue";
 import QuizHeader from "@/components/QuizHeader.vue";
