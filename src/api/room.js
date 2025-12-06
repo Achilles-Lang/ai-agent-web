@@ -54,3 +54,36 @@ export function getRoomAiList(roomId) {
         params: { roomId }
     })
 }
+// 7. 移除 AI 角色
+export function deleteRoomAi(aiId) {
+    return request({
+        url: '/room/ai/delete',
+        method: 'delete',
+        params: { aiId }
+    })
+}
+// 8. 删除房间
+export function deleteRoom(roomId) {
+    return request({
+        url: '/room/delete',
+        method: 'delete',
+        params: { roomId }
+    })
+}
+// 9. 修改房间名
+export function renameRoom(roomId, newName) {
+    return request({
+        url: '/room/rename',
+        method: 'put',
+        params: { roomId, newName }
+    })
+}
+
+// 10. 置顶/取消置顶
+export function pinRoom(roomId) {
+    return request({
+        url: '/room/pin',
+        method: 'put',
+        params: { roomId }
+    })
+}

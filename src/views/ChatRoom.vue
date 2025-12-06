@@ -7,19 +7,29 @@
 
         <div class="w-64 bg-slate-100 dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-700 flex flex-col flex-shrink-0">
           <div class="p-4 border-b border-slate-200 dark:border-slate-700">
-            <button @click="handleCreateRoom" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors">
+            <button
+                @click="handleCreateRoom"
+                class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center gap-2 transition-colors">
               <i class="fa fa-plus"></i> 新建房间
             </button>
           </div>
           <div class="flex-1 overflow-y-auto p-2 space-y-1">
-            <div v-for="room in rooms" :key="room.id" @click="selectRoom(room)"
-                 class="p-3 rounded-lg cursor-pointer transition-colors flex items-center gap-3"
-                 :class="currentRoom?.id === room.id ? 'bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600' : 'hover:bg-slate-200 dark:hover:bg-slate-700/50'">
+            <div
+                v-for="room in rooms"
+                :key="room.id"
+                @click="selectRoom(room)"
+                @contextmenu.prevent="openContextMenu($event, room)"
+                class="p-3 rounded-lg cursor-pointer transition-colors flex items-center gap-3 relative"
+                :class="currentRoom?.id === room.id ? 'bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600' : 'hover:bg-slate-200 dark:hover:bg-slate-700/50'"
+            >
               <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
                 {{ room.roomName ? room.roomName.charAt(0) : '#' }}
               </div>
               <div class="flex-1 min-w-0">
-                <h4 class="font-medium truncate">{{ room.roomName }}</h4>
+                <h4 class="font-medium truncate flex items-center gap-2">
+                  {{ room.roomName }}
+                  <i v-if="room.isPinned" class="fa fa-thumb-tack text-xs text-indigo-500 rotate-45"></i>
+                </h4>
                 <p class="text-xs text-slate-500 truncate">ID: {{ room.id }}</p>
               </div>
             </div>
@@ -59,13 +69,10 @@
                 <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-md" :class="getAvatarColor(msg.senderName)">
                   {{ msg.senderName ? msg.senderName.charAt(0) : '?' }}
                 </div>
-                <div class="max-w-[80%] sm:max-w-[70%]">
-                  <div class="text-xs text-slate-500 mb-1" :class="msg.senderId == myUserId ? 'text-right' : ''">{{ msg.senderName }}</div>
-                  <div
-                      class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words markdown-body"
-                      :class="msg.senderId == myUserId ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'"
-                      v-html="renderMarkdown(msg.content)">
-                  </div>
+                <div
+                    class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words markdown-body max-w-[80%] sm:max-w-[70%]"
+                    :class="msg.senderId == myUserId ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'"
+                    v-html="renderMarkdown(msg.content)">
                 </div>
               </div>
             </template>
@@ -81,11 +88,11 @@
           </div>
         </div>
 
-        <div v-if="showRightSidebar && currentRoom" class="w-64 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col transition-all animate-slideInRight">
+        <div v-if="showRightSidebar && currentRoom" class="w-64 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col transition-all">
           <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
             <h3 class="font-bold text-slate-700 dark:text-slate-200">群成员</h3>
           </div>
-          <div class="flex-1 overflow-y-auto p-3">
+          <div class="flex-1 overflow-y-auto p-3 space-y-2">
             <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50">
               <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">
                 {{ userInfo.nickname?.charAt(0) || '我' }}
@@ -96,33 +103,30 @@
               </div>
             </div>
 
-            <div class="my-3 border-t border-slate-100 dark:border-slate-700"></div>
-            <p class="text-xs text-slate-400 mb-2 px-2">AI 智能体 ({{ activeAiList.length }})</p>
+            <div class="my-2 border-t border-slate-100 dark:border-slate-700"></div>
+            <p class="text-xs text-slate-400 px-2">AI 智能体 ({{ activeAiList.length }})</p>
 
-            <div v-for="ai in activeAiList" :key="ai.id" class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 group cursor-pointer relative">
-              <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm"
-                   :class="getAvatarColor(ai.aiName)">
-                {{ ai.aiName.charAt(0) }}
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex justify-between items-center">
-                  <p class="text-sm font-medium truncate">{{ ai.aiName }}</p>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300">
-                    {{ ai.modelName || 'qwen' }}
-                  </span>
+            <div v-for="ai in activeAiList" :key="ai.id"
+                 class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 group cursor-pointer relative transition-colors">
+
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                     :class="getAvatarColor(ai.aiName)">
+                  {{ ai.aiName.charAt(0) }}
                 </div>
-                <p class="text-xs text-slate-500 truncate" :title="ai.systemPrompt">{{ ai.systemPrompt }}</p>
+                <div class="min-w-0">
+                  <p class="text-sm font-medium truncate">{{ ai.aiName }}</p>
+                  <p class="text-xs text-slate-500 truncate opacity-80">{{ ai.modelName || 'qwen' }}</p>
+                </div>
               </div>
 
-              <div class="absolute left-0 top-full mt-2 w-64 p-3 bg-black/80 text-white text-xs rounded-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl backdrop-blur-sm">
-                <p class="font-bold mb-1">人设：</p>
-                {{ ai.systemPrompt }}
-              </div>
-            </div>
-
-            <div v-if="activeAiList.length === 0" class="text-center py-8 text-slate-400 text-sm">
-              <p>暂无 AI 加入</p>
-              <button @click="handleAddAi" class="text-indigo-500 hover:underline mt-2">去邀请一个？</button>
+              <button
+                  @click.stop="openDeleteModal(ai)"
+                  class="ml-2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                  title="踢出群聊"
+              >
+                <i class="fa fa-trash"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -132,34 +136,22 @@
 
     <div v-if="showAiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
       <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all scale-100">
-
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
           <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <span class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-sm">
-              <i class="fa fa-magic"></i>
-            </span>
+            <span class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-sm"><i class="fa fa-magic"></i></span>
             召唤 AI 助手
           </h3>
-          <button @click="closeAiModal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-            <i class="fa fa-times text-lg"></i>
-          </button>
+          <button @click="showAiModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><i class="fa fa-times text-lg"></i></button>
         </div>
-
         <div class="p-6 space-y-4">
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">AI 名字 <span class="text-red-500">*</span></label>
-            <input v-model="aiForm.aiName" type="text" placeholder="例如：诸葛亮、DeepSeek大神"
-                   class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-purple-500 outline-none transition-all"
-            >
+            <input v-model="aiForm.aiName" type="text" placeholder="例如：诸葛亮" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
           </div>
-
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">人设 (Prompt) <span class="text-red-500">*</span></label>
-            <textarea v-model="aiForm.systemPrompt" rows="3" placeholder="例如：你是一个严谨的程序员，说话喜欢用代码举例..."
-                      class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-purple-500 outline-none transition-all resize-none"
-            ></textarea>
+            <textarea v-model="aiForm.systemPrompt" rows="3" placeholder="例如：你是一个严谨的程序员..." class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-purple-500 outline-none transition-all resize-none"></textarea>
           </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">模型选择</label>
@@ -172,20 +164,97 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">API Key</label>
-              <input v-model="aiForm.apiKey" type="password" placeholder="选填，默认用系统Key"
-                     class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-purple-500 outline-none"
-              >
+              <input v-model="aiForm.apiKey" type="password" placeholder="选填，默认用系统Key" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-purple-500 outline-none">
             </div>
           </div>
         </div>
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
+          <button @click="showAiModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">取消</button>
+          <button @click="submitAiForm" :disabled="!isFormValid" class="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg flex items-center gap-2 disabled:opacity-50">
+            <i class="fa fa-check"></i> 立即召唤
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden transform transition-all scale-100">
+        <div class="p-6 text-center">
+          <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i class="fa fa-exclamation-triangle"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">确认移除？</h3>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">
+            你确定要将 <span class="font-bold text-slate-800 dark:text-slate-200">"{{ aiToDelete?.aiName }}"</span> 踢出群聊吗？此操作无法撤销。
+          </p>
+          <div class="flex gap-3 justify-center">
+            <button @click="showDeleteModal = false" class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg transition-colors">
+              再想想
+            </button>
+            <button @click="confirmDeleteAi" class="px-5 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg shadow-md shadow-red-200 dark:shadow-none transition-colors">
+              确认踢出
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="contextMenu.visible"
+         class="fixed z-50 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden py-1 animate-fadeIn"
+         :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }">
+
+      <button @click="handlePinRoom" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors">
+        <i class="fa" :class="contextMenu.room?.isPinned ? 'fa-thumb-tack text-indigo-500' : 'fa-thumb-tack'"></i>
+        {{ contextMenu.room?.isPinned ? '取消置顶' : '置顶房间' }}
+      </button>
+
+      <button @click="handleRenameRoom2" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors">
+        <i class="fa fa-pencil"></i> 修改名称
+      </button>
+
+      <div class="my-1 border-t border-slate-200 dark:border-slate-600"></div>
+
+      <button @click="handleDeleteRoom" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2 transition-colors">
+        <i class="fa fa-trash-o"></i> 删除房间
+      </button>
+    </div>
+
+
+    <div v-if="showRenameModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden transform transition-all scale-100">
+
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white">修改房间名称</h3>
+          <button @click="showRenameModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+            <i class="fa fa-times text-lg"></i>
+          </button>
+        </div>
+
+        <div class="p-6">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">新的名称</label>
+          <div class="relative">
+            <input
+                id="renameInput"
+                v-model="renameForm.newName"
+                @keyup.enter="confirmRename"
+                type="text"
+                class="w-full px-4 py-2 pl-10 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                placeholder="请输入..."
+            >
+            <i class="fa fa-pencil absolute left-3 top-3 text-slate-400"></i>
+          </div>
+          <p class="mt-2 text-xs text-slate-400">原名称：{{ renameForm.oldName }}</p>
+        </div>
 
         <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-          <button @click="closeAiModal" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg transition-colors">
+          <button @click="showRenameModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg transition-colors">
             取消
           </button>
-          <button @click="submitAiForm" :disabled="!isFormValid"
-                  class="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-sm shadow-purple-200 dark:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-            <i class="fa fa-check"></i> 立即召唤
+          <button
+              @click="confirmRename"
+              :disabled="!renameForm.newName.trim()"
+              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md shadow-indigo-200 dark:shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            保存修改
           </button>
         </div>
 
@@ -195,121 +264,164 @@
 </template>
 
 <script setup>
-import {ref, onMounted, onUnmounted, nextTick, computed} from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import QuizHeader from "@/components/QuizHeader.vue";
-// 引入了 addAiToRoom
-import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom ,getRoomAiList} from "@/api/room.js";
-import MarkdownIt from "markdown-it";
-const showRightSidebar = ref(true); // 控制侧边栏显示
-const activeAiList = ref([]); // 当前房间的 AI 列表
-const md = new MarkdownIt({
-  html:false,
-  linkify:true,
-  breaks: true,
+import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom, getRoomAiList, deleteRoomAi, deleteRoom, pinRoom, renameRoom } from "@/api/room.js";
+import MarkdownIt from 'markdown-it';
+// --- 右键菜单状态 ---
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  room: null // 记录当前右键点击的是哪个房间
 });
-const resetAiForm = () => {
-  return md.render(text || '');
-}
+// 2. 打开右键菜单
+const openContextMenu = (e, room) => {
+  // 记录坐标
+  contextMenu.value = {
+    visible: true,
+    x: e.clientX,
+    y: e.clientY,
+    room: room
+  };
+};
+// 3. 关闭右键菜单 (点击别处时触发)
+const closeContextMenu = () => {
+  contextMenu.value.visible = false;
+};
+// 4. 执行删除房间
+const handleDeleteRoom = async () => {
+  const roomToDelete = contextMenu.value.room;
+  if (!roomToDelete) return;
+
+  if (!confirm(`确定要解散房间【${roomToDelete.roomName}】吗？所有聊天记录将被清除。`)) {
+    closeContextMenu();
+    return;
+  }
+
+  try {
+    const res = await deleteRoom(roomToDelete.id);
+    if (res.code === 200) {
+      // alert("房间已解散");
+      // 如果删的是当前正在聊的房间，清空当前选中状态
+      if (currentRoom.value && currentRoom.value.id === roomToDelete.id) {
+        currentRoom.value = null;
+        activeAiList.value = [];
+        messages.value = [];
+      }
+      await loadRooms(); // 刷新列表
+    }
+  } catch (e) {
+    console.error(e);
+    alert("删除失败");
+  } finally {
+    closeContextMenu();
+  }
+};
+
+// 5. 监听全局点击，以便关闭菜单
+onMounted(() => {
+  loadRooms();
+  window.addEventListener('click', closeContextMenu); // 注册点击监听
+});
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer);
+  window.removeEventListener('click', closeContextMenu); // 销毁监听
+});
+// --- Markdown 配置 ---
+const md = new MarkdownIt({ html: false, linkify: true, breaks: true });
+const renderMarkdown = (text) => md.render(text || '');
+
+// --- 状态变量 ---
 const rooms = ref([]);
 const currentRoom = ref(null);
 const messages = ref([]);
 const inputContent = ref("");
-// --- AI 弹窗相关状态 ---
-const showAiModal = ref(false);
-const aiForm = ref({
-  aiName: '',
-  systemPrompt: '',
-  apiKey: '',
-  modelName: 'qwen-plus'
-});
 const myUserId = localStorage.getItem('USER_ID');
 const userInfo = JSON.parse(localStorage.getItem('USER_INFO') || '{}');
 const msgContainer = ref(null);
+const showRightSidebar = ref(true);
+const activeAiList = ref([]);
 let pollTimer = null;
 
+// --- 弹窗状态 ---
+const showAiModal = ref(false);
+const showDeleteModal = ref(false); // 新增删除弹窗控制
+// --- 重命名弹窗状态 ---
+const showRenameModal = ref(false);
+const renameForm = ref({ roomId: null, oldName: '', newName: '' });
+const aiToDelete = ref(null);       // 暂存要删除的 AI
+const aiForm = ref({ aiName: '', systemPrompt: '', apiKey: '', modelName: 'qwen-plus' });
+
+const isFormValid = computed(() => aiForm.value.aiName.trim() && aiForm.value.systemPrompt.trim());
+
+// --- 基础逻辑 ---
 const loadRooms = async () => {
   try {
     const res = await getRoomList();
-    if (res.code === 200) {
-      rooms.value = res.data;
-    }
-  } catch (e) {
-    console.error("加载房间失败", e);
-  }
+    if (res.code === 200) rooms.value = res.data;
+  } catch (e) { console.error(e); }
 };
+// 打开重命名弹窗
+const handleRenameRoom2 = () => {
+  const room = contextMenu.value.room;
+  if (!room) return;
 
-const handleCreateRoom = async () => {
-  const name = prompt("请输入新房间的名字：");
-  if (name) {
-    await createRoom(name);
-    await loadRooms();
-  }
-};
+  closeContextMenu(); // 先关掉右键菜单
 
-// 点击顶部按钮，只负责打开弹窗
-const handleAddAi = () => {
-  if (!currentRoom.value) return;
-  // 重置表单
-  aiForm.value = {
-    aiName: '',
-    systemPrompt: '',
-    apiKey: '',
-    modelName: 'qwen-plus'
+  // 初始化表单数据
+  renameForm.value = {
+    roomId: room.id,
+    oldName: room.roomName,
+    newName: room.roomName // 默认填入旧名字
   };
-  showAiModal.value = true;
-};
 
-// 关闭弹窗
-const closeAiModal = () => {
-  showAiModal.value = false;
+  showRenameModal.value = true; // 显示弹窗
+
+  // 体验优化：自动聚焦输入框 (稍微延迟等待弹窗渲染)
+  nextTick(() => {
+    document.getElementById('renameInput')?.focus();
+  });
 };
-// 提交表单
-const submitAiForm = async () => {
-  if (!currentRoom.value) return;
+// 确认修改
+const confirmRename = async () => {
+  const { roomId, oldName, newName } = renameForm.value;
+
+  if (!newName || !newName.trim()) {
+    alert("房间名不能为空");
+    return;
+  }
+
+  if (newName === oldName) {
+    showRenameModal.value = false; // 没改动，直接关
+    return;
+  }
 
   try {
-    await addAiToRoom({
-      roomId: currentRoom.value.id,
-      aiName: aiForm.value.aiName,
-      systemPrompt: aiForm.value.systemPrompt,
-      apiKey: aiForm.value.apiKey,
-      modelName: aiForm.value.modelName
-    });
-
-    alert(`成功召唤了 ${aiForm.value.aiName}！`);
-    closeAiModal(); // 关闭弹窗
-    await loadRooms();
+    await renameRoom(roomId, newName);
+    showRenameModal.value = false;
+    await loadRooms(); // 刷新列表
   } catch (e) {
     console.error(e);
-    alert("召唤失败，请检查网络");
+    alert("修改失败，请重试");
   }
+};
+const handleCreateRoom = async () => {
+  const name = prompt("请输入新房间的名字：");
+  if (name) { await createRoom(name); await loadRooms(); }
 };
 
 const selectRoom = async (room) => {
   currentRoom.value = room;
   messages.value = [];
   loadRoomAis();
-  await  Promise.all([
-      loadMessages(),
-      loadRooms()
-  ]);
-
+  await loadMessages();
   scrollToBottom();
-  if(pollTimer) clearTimeout(pollTimer);
-  pollTimer = setInterval(loadRooms, 1000);
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(loadMessages, 1000);
 };
-// 3. 新增：加载 AI 列表的函数
-const loadRoomAis = async () => {
-  if (!currentRoom.value) return;
-  try {
-    const res = await getRoomAiList(currentRoom.value.id);
-    if (res.code === 200) {
-      activeAiList.value = res.data;
-    }
-  } catch (e) {
-    console.error("加载AI成员失败", e);
-  }
-}
+
 const loadMessages = async () => {
   if (!currentRoom.value) return;
   try {
@@ -323,34 +435,84 @@ const loadMessages = async () => {
         messages.value = newMessages;
       }
     }
-  } catch (e) {
-    console.error(e);
-  }
+  } catch (e) { console.error(e); }
 };
+
+const loadRoomAis = async () => {
+  if (!currentRoom.value) return;
+  try {
+    const res = await getRoomAiList(currentRoom.value.id);
+    if (res.code === 200) activeAiList.value = res.data;
+  } catch (e) { console.error(e); }
+}
 
 const handleSend = async () => {
   const content = inputContent.value.trim();
   if (!content || !currentRoom.value) return;
-
-  const msgData = {
-    roomId: currentRoom.value.id,
-    senderId: myUserId,
-    senderName: userInfo.nickname || 'User' + myUserId,
-    content: content
-  };
-
   inputContent.value = "";
-
   try {
-    await sendMessage(msgData);
+    await sendMessage({
+      roomId: currentRoom.value.id,
+      senderId: myUserId,
+      senderName: userInfo.nickname || 'User' + myUserId,
+      content: content
+    });
     await loadMessages();
     scrollToBottom();
+  } catch (e) { alert("发送失败"); }
+};
+
+// --- 召唤 AI 逻辑 ---
+const handleAddAi = () => {
+  if (!currentRoom.value) return;
+  aiForm.value = { aiName: '', systemPrompt: '', apiKey: '', modelName: 'qwen-plus' };
+  showAiModal.value = true;
+};
+
+const submitAiForm = async () => {
+  try {
+    await addAiToRoom({
+      roomId: currentRoom.value.id,
+      aiName: aiForm.value.aiName,
+      systemPrompt: aiForm.value.systemPrompt,
+      apiKey: aiForm.value.apiKey,
+      modelName: aiForm.value.modelName
+    });
+    alert(`成功召唤了 ${aiForm.value.aiName}！`);
+    showAiModal.value = false;
+    await loadRoomAis();
   } catch (e) {
-    alert("发送失败");
+    console.error(e);
+    alert("召唤失败");
   }
 };
 
-// 简单的头像颜色生成器
+// --- 删除 AI 逻辑 (修复网络错误) ---
+const openDeleteModal = (ai) => {
+  aiToDelete.value = ai;
+  showDeleteModal.value = true;
+}
+
+const confirmDeleteAi = async () => {
+  if (!aiToDelete.value) return;
+  try {
+    // 关键修正：这里不需要传对象，deleteRoomAi 在 api/room.js 里定义的是传 ID
+    const res = await deleteRoomAi(aiToDelete.value.id);
+
+    if (res.code === 200) {
+      // alert("已移除"); // 嫌烦可以注释掉
+      showDeleteModal.value = false;
+      await loadRoomAis(); // 刷新列表
+    } else {
+      alert(res.message || "删除失败");
+    }
+  } catch (e) {
+    console.error("删除出错:", e);
+    alert("网络错误，请检查后端日志");
+  }
+};
+
+// --- 工具函数 ---
 const getAvatarColor = (name) => {
   if (!name) return 'bg-gray-400';
   if (name === '我' || name === userInfo.nickname) return 'bg-indigo-500';
@@ -358,55 +520,70 @@ const getAvatarColor = (name) => {
   if (name.includes('DeepSeek')) return 'bg-blue-600';
   if (name.includes('元宝')) return 'bg-green-500';
   if (name.includes('豆包')) return 'bg-orange-500';
-  return 'bg-indigo-400'; // 默认
+  return 'bg-indigo-400';
 }
 
 const scrollToBottom = () => {
   nextTick(() => {
-    if (msgContainer.value) {
-      msgContainer.value.scrollTop = msgContainer.value.scrollHeight;
-    }
+    if (msgContainer.value) msgContainer.value.scrollTop = msgContainer.value.scrollHeight;
   });
 };
 
-const isScrollAtBottom = () => {
-  if (!msgContainer.value) return true;
-  const { scrollTop, scrollHeight, clientHeight } = msgContainer.value;
-  return scrollHeight - scrollTop - clientHeight < 100;
-}
+onMounted(() => { loadRooms(); });
+onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
+// 房间改名
+const handleRenameRoom = async () => {
+  const room = contextMenu.value.room;
+  if (!room) return;
 
-onMounted(() => {
-  loadRooms();
-});
+  // 关闭菜单先
+  closeContextMenu();
 
-onUnmounted(() => {
-  if (pollTimer) clearInterval(pollTimer);
-});
-const isFormValid = computed(() => {
-  return aiForm.value.aiName.trim() && aiForm.value.systemPrompt.trim();
-});
+  const newName = prompt("请输入新的房间名称：", room.roomName);
+  if (newName && newName.trim() !== room.roomName) {
+    try {
+      await renameRoom(room.id, newName);
+      await loadRooms(); // 刷新列表
+    } catch (e) {
+      alert("修改失败");
+    }
+  }
+};
+// 房间置顶
+const handlePinRoom = async () => {
+  const room = contextMenu.value.room;
+  if (!room) return;
+
+  closeContextMenu();
+
+  try {
+    await pinRoom(room.id);
+    await loadRooms(); // 刷新列表（后端会重新排序，置顶的会跑上去）
+  } catch (e) {
+    alert("操作失败");
+  }
+};
 </script>
+
 <style>
-/* Markdown 样式补丁 */
+/* Markdown 样式 */
 .markdown-body ul { list-style-type: disc; margin-left: 1.5em; }
 .markdown-body ol { list-style-type: decimal; margin-left: 1.5em; }
 .markdown-body p { margin-bottom: 0.5em; }
 .markdown-body pre {
-  background-color: #1e293b; /* 深色背景 */
-  color: #e2e8f0;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin: 0.5rem 0;
+  background-color: #1e293b; color: #e2e8f0; padding: 0.75rem;
+  border-radius: 0.5rem; overflow-x: auto; margin: 0.5rem 0; font-size: 0.85em;
 }
 .markdown-body code {
-  background-color: rgba(100, 100, 100, 0.2);
-  padding: 0.1rem 0.3rem;
-  border-radius: 0.2rem;
-  font-family: monospace;
+  background-color: rgba(100, 100, 100, 0.2); padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem; font-family: monospace; font-size: 0.9em;
 }
-/* 避免用户自己的消息气泡里的代码块背景太突兀 */
-.bg-indigo-600 .markdown-body pre {
-  background-color: rgba(0, 0, 0, 0.3);
+.bg-indigo-600 .markdown-body pre { background-color: rgba(0, 0, 0, 0.3); }
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.1s ease-out forwards;
 }
 </style>
