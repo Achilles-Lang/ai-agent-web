@@ -70,12 +70,22 @@
                   {{ msg.senderName ? msg.senderName.charAt(0) : '?' }}
                 </div>
                 <div
-                    class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words markdown-body max-w-[80%] sm:max-w-[70%]"
+                    class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words"
+
                     :class="msg.senderId == myUserId ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'"
-                    v-html="renderMarkdown(msg.content)">
+                >
+                  <div v-if="msg.type === 'THINKING'" class="typing-indicator">
+                    <span class="text-xs text-slate-400 mr-2">思考中</span>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                  </div>
+
+                  <div v-else class="markdown-body" v-html="renderMarkdown(msg.content)"></div>
                 </div>
               </div>
             </template>
+
           </div>
 
           <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
@@ -585,5 +595,26 @@ const handlePinRoom = async () => {
 }
 .animate-fadeIn {
   animation: fadeIn 0.1s ease-out forwards;
+}
+/* 思考中动画 */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+}
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #8b5cf6; /* 紫色 */
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
 }
 </style>
