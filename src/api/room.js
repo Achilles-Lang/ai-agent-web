@@ -46,3 +46,11 @@ export function addAiToRoom(data) {
         data: data
     })
 }
+// 6. 获取房间内的 AI 列表
+export function getRoomAiList(roomId) {
+    return request({
+        url: '/room/ai/list',
+        method: 'get',
+        params: { roomId }
+    })
+}
