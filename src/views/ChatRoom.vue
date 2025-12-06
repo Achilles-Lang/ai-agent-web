@@ -98,27 +98,39 @@
           </div>
         </div>
 
-        <div v-if="showRightSidebar && currentRoom" class="w-64 bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col transition-all">
-          <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-            <h3 class="font-bold text-slate-700 dark:text-slate-200">群成员</h3>
+        <div
+            class="bg-white dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 ease-in-out overflow-hidden"
+            :class="showRightSidebar ? 'w-72 opacity-100' : 'w-0 opacity-0 border-l-0'"
+        >
+          <div class="p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 flex flex-col items-center text-center">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white flex items-center justify-center text-3xl font-bold shadow-lg mb-3">
+              {{ currentRoom?.avatar ? '' : (currentRoom?.roomName?.charAt(0) || '#') }}
+              <img v-if="currentRoom?.avatar" :src="currentRoom.avatar" class="w-full h-full object-cover rounded-2xl">
+            </div>
+
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">{{ currentRoom?.roomName }}</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 px-2 line-clamp-2">
+              {{ currentRoom?.description || '暂无群简介...' }}
+            </p>
           </div>
+
+          <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/80 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">群成员 ({{ activeAiList.length + 1 }})</span>
+          </div>
+
           <div class="flex-1 overflow-y-auto p-3 space-y-2">
-            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50">
+            <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
               <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">
                 {{ userInfo.nickname?.charAt(0) || '我' }}
               </div>
               <div>
                 <p class="text-sm font-medium">我 (Host)</p>
-                <p class="text-xs text-green-500">● 在线</p>
+                <p class="text-xs text-green-500 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>在线</p>
               </div>
             </div>
 
-            <div class="my-2 border-t border-slate-100 dark:border-slate-700"></div>
-            <p class="text-xs text-slate-400 px-2">AI 智能体 ({{ activeAiList.length }})</p>
-
             <div v-for="ai in activeAiList" :key="ai.id"
                  class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 group cursor-pointer relative transition-colors">
-
               <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
                      :class="getAvatarColor(ai.aiName)">
@@ -129,12 +141,7 @@
                   <p class="text-xs text-slate-500 truncate opacity-80">{{ ai.modelName || 'qwen' }}</p>
                 </div>
               </div>
-
-              <button
-                  @click.stop="openDeleteModal(ai)"
-                  class="ml-2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all opacity-0 group-hover:opacity-100"
-                  title="踢出群聊"
-              >
+              <button @click.stop="openDeleteModal(ai)" class="ml-2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-all opacity-0 group-hover:opacity-100">
                 <i class="fa fa-trash"></i>
               </button>
             </div>
@@ -218,8 +225,8 @@
         {{ contextMenu.room?.isPinned ? '取消置顶' : '置顶房间' }}
       </button>
 
-      <button @click="handleRenameRoom2" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors">
-        <i class="fa fa-pencil"></i> 修改名称
+      <button @click="handleEditRoom" class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors">
+        <i class="fa fa-cog"></i> 房间设置
       </button>
 
       <div class="my-1 border-t border-slate-200 dark:border-slate-600"></div>
@@ -230,42 +237,66 @@
     </div>
 
 
-    <div v-if="showRenameModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden transform transition-all scale-100">
+    <div v-if="showEditRoomModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all scale-100">
 
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-          <h3 class="text-lg font-bold text-slate-800 dark:text-white">修改房间名称</h3>
-          <button @click="showRenameModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-            <i class="fa fa-times text-lg"></i>
-          </button>
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white">房间设置</h3>
+          <button @click="showEditRoomModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa fa-times text-lg"></i></button>
         </div>
 
-        <div class="p-6">
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">新的名称</label>
-          <div class="relative">
-            <input
-                id="renameInput"
-                v-model="renameForm.newName"
-                @keyup.enter="confirmRename"
-                type="text"
-                class="w-full px-4 py-2 pl-10 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                placeholder="请输入..."
-            >
-            <i class="fa fa-pencil absolute left-3 top-3 text-slate-400"></i>
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">房间名称</label>
+            <input v-model="editRoomForm.roomName" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
           </div>
-          <p class="mt-2 text-xs text-slate-400">原名称：{{ renameForm.oldName }}</p>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">群简介</label>
+            <textarea v-model="editRoomForm.description" rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none" placeholder="介绍一下这个群是干嘛的..."></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">群头像 (URL)</label>
+            <input v-model="editRoomForm.avatar" type="text" placeholder="http://..." class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+            <p class="text-xs text-slate-400 mt-1">贴入图片链接，留空则显示默认文字头像</p>
+          </div>
         </div>
 
         <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-          <button @click="showRenameModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg transition-colors">
-            取消
-          </button>
-          <button
-              @click="confirmRename"
-              :disabled="!renameForm.newName.trim()"
-              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md shadow-indigo-200 dark:shadow-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            保存修改
-          </button>
+          <button @click="showEditRoomModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+          <button @click="submitEditRoom" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md transition-colors">保存设置</button>
+        </div>
+
+      </div>
+    </div>
+    <div v-if="showDeleteRoomModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden transform transition-all scale-100">
+
+        <div class="p-6 text-center">
+          <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i class="fa fa-exclamation-triangle"></i>
+          </div>
+
+          <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-2">解散房间？</h3>
+
+          <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+            你确定要删除房间 <span class="font-bold text-slate-800 dark:text-slate-200">"{{ roomToDelete?.roomName }}"</span> 吗？<br>
+            <span class="text-xs text-red-400">注意：所有的聊天记录都将无法恢复。</span>
+          </p>
+
+          <div class="flex gap-3 justify-center">
+            <button
+                @click="showDeleteRoomModal = false"
+                class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              取消
+            </button>
+            <button
+                @click="confirmDeleteRoom"
+                class="px-5 py-2.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg shadow-md shadow-red-200 dark:shadow-none transition-colors"
+            >
+              确认解散
+            </button>
+          </div>
         </div>
 
       </div>
@@ -276,7 +307,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import QuizHeader from "@/components/QuizHeader.vue";
-import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom, getRoomAiList, deleteRoomAi, deleteRoom, pinRoom, renameRoom } from "@/api/room.js";
+import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom, getRoomAiList, deleteRoomAi, deleteRoom, pinRoom, renameRoom, updateRoom } from "@/api/room.js";
 import MarkdownIt from 'markdown-it';
 // --- 右键菜单状态 ---
 const contextMenu = ref({
@@ -300,35 +331,65 @@ const closeContextMenu = () => {
   contextMenu.value.visible = false;
 };
 // 4. 执行删除房间
-const handleDeleteRoom = async () => {
-  const roomToDelete = contextMenu.value.room;
-  if (!roomToDelete) return;
+// const handleDeleteRoom = async () => {
+//   const roomToDelete = contextMenu.value.room;
+//   if (!roomToDelete) return;
+//
+//   if (!confirm(`确定要解散房间【${roomToDelete.roomName}】吗？所有聊天记录将被清除。`)) {
+//     closeContextMenu();
+//     return;
+//   }
+//
+//   try {
+//     const res = await deleteRoom(roomToDelete.id);
+//     if (res.code === 200) {
+//       // alert("房间已解散");
+//       // 如果删的是当前正在聊的房间，清空当前选中状态
+//       if (currentRoom.value && currentRoom.value.id === roomToDelete.id) {
+//         currentRoom.value = null;
+//         activeAiList.value = [];
+//         messages.value = [];
+//       }
+//       await loadRooms(); // 刷新列表
+//     }
+//   } catch (e) {
+//     console.error(e);
+//     alert("删除失败");
+//   } finally {
+//     closeContextMenu();
+//   }
+// };
+// 点击右键菜单的“删除”：只负责打开弹窗
+const handleDeleteRoom = () => {
+  const room = contextMenu.value.room;
+  if (!room) return;
 
-  if (!confirm(`确定要解散房间【${roomToDelete.roomName}】吗？所有聊天记录将被清除。`)) {
-    closeContextMenu();
-    return;
-  }
+  closeContextMenu(); // 关掉右键菜单
+
+  roomToDelete.value = room; // 记住要删哪个房间
+  showDeleteRoomModal.value = true; // 显示警告弹窗
+};
+// 确认删除房间
+const confirmDeleteRoom = async () => {
+  if (!roomToDelete.value) return;
 
   try {
-    const res = await deleteRoom(roomToDelete.id);
+    const res = await deleteRoom(roomToDelete.value.id);
     if (res.code === 200) {
-      // alert("房间已解散");
-      // 如果删的是当前正在聊的房间，清空当前选中状态
-      if (currentRoom.value && currentRoom.value.id === roomToDelete.id) {
+      // 如果删的是当前正在聊的房间，清空选中状态
+      if (currentRoom.value && currentRoom.value.id === roomToDelete.value.id) {
         currentRoom.value = null;
         activeAiList.value = [];
         messages.value = [];
       }
       await loadRooms(); // 刷新列表
+      showDeleteRoomModal.value = false; // 关闭弹窗
     }
   } catch (e) {
     console.error(e);
     alert("删除失败");
-  } finally {
-    closeContextMenu();
   }
 };
-
 // 5. 监听全局点击，以便关闭菜单
 onMounted(() => {
   loadRooms();
@@ -358,8 +419,13 @@ let pollTimer = null;
 // --- 弹窗状态 ---
 const showAiModal = ref(false);
 const showDeleteModal = ref(false); // 新增删除弹窗控制
+// --- 删除房间弹窗状态 ---
+const showDeleteRoomModal = ref(false);
+const roomToDelete = ref(null); // 暂存要删除的房间对象
 // --- 重命名弹窗状态 ---
-const showRenameModal = ref(false);
+const showEditRoomModal = ref(false);
+const editRoomForm = ref({ id: null, roomName: '', description: '', avatar: '' });
+
 const renameForm = ref({ roomId: null, oldName: '', newName: '' });
 const aiToDelete = ref(null);       // 暂存要删除的 AI
 const aiForm = ref({ aiName: '', systemPrompt: '', apiKey: '', modelName: 'qwen-plus' });
@@ -373,26 +439,50 @@ const loadRooms = async () => {
     if (res.code === 200) rooms.value = res.data;
   } catch (e) { console.error(e); }
 };
-// 打开重命名弹窗
-const handleRenameRoom2 = () => {
-  const room = contextMenu.value.room;
+
+const handleEditRoom = () => {
+  const room = contextMenu.value.room; // 从右键菜单获取当前房间
   if (!room) return;
+  closeContextMenu();
 
-  closeContextMenu(); // 先关掉右键菜单
-
-  // 初始化表单数据
-  renameForm.value = {
-    roomId: room.id,
-    oldName: room.roomName,
-    newName: room.roomName // 默认填入旧名字
+  // 填充表单
+  editRoomForm.value = {
+    id: room.id,
+    roomName: room.roomName,
+    description: room.description || '',
+    avatar: room.avatar || ''
   };
+  showEditRoomModal.value = true;
+};
 
-  showRenameModal.value = true; // 显示弹窗
+// 4. 提交保存
+const submitEditRoom = async () => {
+  if (!editRoomForm.value.roomName.trim()) return alert("房间名不能为空");
 
-  // 体验优化：自动聚焦输入框 (稍微延迟等待弹窗渲染)
-  nextTick(() => {
-    document.getElementById('renameInput')?.focus();
-  });
+  try {
+    await updateRoom(editRoomForm.value); // 调用后端新接口
+
+    // 更新本地列表，不用刷新整个页面
+    const room = rooms.value.find(r => r.id === editRoomForm.value.id);
+    if (room) {
+      room.roomName = editRoomForm.value.roomName;
+      room.description = editRoomForm.value.description;
+      room.avatar = editRoomForm.value.avatar;
+    }
+
+    // 如果改的是当前正在聊的房间，也要更新当前房间的信息
+    if (currentRoom.value && currentRoom.value.id === editRoomForm.value.id) {
+      currentRoom.value.roomName = editRoomForm.value.roomName;
+      currentRoom.value.description = editRoomForm.value.description;
+      currentRoom.value.avatar = editRoomForm.value.avatar;
+    }
+
+    showEditRoomModal.value = false;
+    alert("保存成功");
+  } catch (e) {
+    console.error(e);
+    alert("保存失败");
+  }
 };
 // 确认修改
 const confirmRename = async () => {
@@ -541,24 +631,6 @@ const scrollToBottom = () => {
 
 onMounted(() => { loadRooms(); });
 onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
-// 房间改名
-const handleRenameRoom = async () => {
-  const room = contextMenu.value.room;
-  if (!room) return;
-
-  // 关闭菜单先
-  closeContextMenu();
-
-  const newName = prompt("请输入新的房间名称：", room.roomName);
-  if (newName && newName.trim() !== room.roomName) {
-    try {
-      await renameRoom(room.id, newName);
-      await loadRooms(); // 刷新列表
-    } catch (e) {
-      alert("修改失败");
-    }
-  }
-};
 // 房间置顶
 const handlePinRoom = async () => {
   const room = contextMenu.value.room;

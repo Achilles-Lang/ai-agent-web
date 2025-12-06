@@ -87,3 +87,11 @@ export function pinRoom(roomId) {
         params: { roomId }
     })
 }
+// 11. 更新房间信息
+export function updateRoom(data) {
+    return request({
+        url: '/room/update',
+        method: 'post',
+        data: data
+    })
+}
