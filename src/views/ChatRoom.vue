@@ -61,8 +61,10 @@
                 </div>
                 <div class="max-w-[80%] sm:max-w-[70%]">
                   <div class="text-xs text-slate-500 mb-1" :class="msg.senderId == myUserId ? 'text-right' : ''">{{ msg.senderName }}</div>
-                  <div class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words" :class="msg.senderId == myUserId ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'">
-                    {{ msg.content }}
+                  <div
+                      class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words markdown-body"
+                      :class="msg.senderId == myUserId ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'"
+                      v-html="renderMarkdown(msg.content)">
                   </div>
                 </div>
               </div>
@@ -197,9 +199,17 @@ import {ref, onMounted, onUnmounted, nextTick, computed} from 'vue';
 import QuizHeader from "@/components/QuizHeader.vue";
 // 引入了 addAiToRoom
 import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom ,getRoomAiList} from "@/api/room.js";
+import MarkdownIt from "markdown-it";
 const showRightSidebar = ref(true); // 控制侧边栏显示
 const activeAiList = ref([]); // 当前房间的 AI 列表
-
+const md = new MarkdownIt({
+  html:false,
+  linkify:true,
+  breaks: true,
+});
+const resetAiForm = () => {
+  return md.render(text || '');
+}
 const rooms = ref([]);
 const currentRoom = ref(null);
 const messages = ref([]);
@@ -376,3 +386,27 @@ const isFormValid = computed(() => {
   return aiForm.value.aiName.trim() && aiForm.value.systemPrompt.trim();
 });
 </script>
+<style>
+/* Markdown 样式补丁 */
+.markdown-body ul { list-style-type: disc; margin-left: 1.5em; }
+.markdown-body ol { list-style-type: decimal; margin-left: 1.5em; }
+.markdown-body p { margin-bottom: 0.5em; }
+.markdown-body pre {
+  background-color: #1e293b; /* 深色背景 */
+  color: #e2e8f0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+.markdown-body code {
+  background-color: rgba(100, 100, 100, 0.2);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+  font-family: monospace;
+}
+/* 避免用户自己的消息气泡里的代码块背景太突兀 */
+.bg-indigo-600 .markdown-body pre {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+</style>
