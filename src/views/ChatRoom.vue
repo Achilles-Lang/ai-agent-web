@@ -65,23 +65,62 @@
               <p>选择左侧房间加入群聊</p>
             </div>
             <template v-else>
-              <div v-for="msg in messages" :key="msg.id" class="flex gap-4" :class="msg.senderId == myUserId ? 'flex-row-reverse' : ''">
-                <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-md" :class="getAvatarColor(msg.senderName)">
+              <div v-for="msg in messages" :key="msg.id"
+                   class="flex gap-4 group relative mb-6"
+                   :class="msg.senderId == myUserId ? 'flex-row-reverse' : ''">
+
+                <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-md"
+                     :class="getAvatarColor(msg.senderName)">
                   {{ msg.senderName ? msg.senderName.charAt(0) : '?' }}
                 </div>
-                <div
-                    class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words"
 
-                    :class="msg.senderId == myUserId ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'"
-                >
-                  <div v-if="msg.type === 'THINKING'" class="typing-indicator">
-                    <span class="text-xs text-slate-400 mr-2">思考中</span>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
+                <div class="max-w-[80%] sm:max-w-[70%] flex flex-col relative"
+                     :class="msg.senderId == myUserId ? 'items-end' : 'items-start'">
+
+                  <div class="text-xs text-slate-500 mb-1" :class="msg.senderId == myUserId ? 'text-right' : ''">
+                    {{ msg.senderName }}
                   </div>
 
-                  <div v-else class="markdown-body" v-html="renderMarkdown(msg.content)"></div>
+                  <div v-if="msg.type === 'IMAGE'" class="relative">
+                    <img :src="msg.content"
+                         class="max-w-full rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-90 transition-opacity"
+                         style="max-height: 300px;"
+                         @click="previewImage(msg.content)"
+                         @contextmenu.prevent="openMsgContextMenu($event, msg)">
+                  </div>
+
+                  <div v-else-if="msg.type === 'THINKING'"
+                       class="p-3 rounded-2xl shadow-sm bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none typing-indicator"
+                       @contextmenu.prevent="openMsgContextMenu($event, msg)">
+                    <span class="text-xs text-slate-400 mr-2">思考中</span>
+                    <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+                  </div>
+
+                  <div v-else
+                       class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words markdown-body cursor-pointer transition-all hover:brightness-95"
+                       :class="msg.senderId == myUserId ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'"
+                       v-html="renderMarkdown(msg.content)"
+                       @contextmenu.prevent="openMsgContextMenu($event, msg)">
+                  </div>
+
+                  <div v-if="msg.reactions && msg.reactions.length > 0"
+                       class="flex flex-wrap gap-1.5 mt-1.5 px-1"
+                       :class="msg.senderId == myUserId ? 'justify-end' : 'justify-start'">
+
+                    <button
+                        v-for="(react, idx) in msg.reactions"
+                        :key="idx"
+                        @click="handleReaction(react.emoji, msg)"
+                        class="group flex items-center gap-1 px-2 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:border-indigo-400 rounded-full shadow-sm transition-all hover:-translate-y-0.5"
+                    >
+                      <span class="text-base leading-none">{{ react.emoji }}</span>
+                      <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 leading-none">
+          {{ react.count }}
+        </span>
+                    </button>
+
+                  </div>
+
                 </div>
               </div>
             </template>
@@ -89,7 +128,37 @@
           </div>
 
           <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div v-if="replyingTo"
+                 class="mb-3 mx-auto max-w-4xl flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl border-l-4 border-indigo-500 animate-fade-in-up shadow-sm">
+              <div class="flex flex-col overflow-hidden mr-3">
+      <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">
+        <i class="fa fa-reply mr-1"></i> 回复 {{ replyingTo.senderName }}
+      </span>
+                <span class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px] sm:max-w-md">
+        {{ replyingTo.content }}
+      </span>
+              </div>
+              <button @click="cancelReply" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="fa fa-times"></i>
+              </button>
+            </div>
             <div class="flex gap-4 max-w-4xl mx-auto">
+              <input
+                  type="file"
+                  ref="fileInput"
+                  accept="image/*"
+                  class="hidden"
+                  @change="handleFileChange"
+              >
+
+              <button
+                  @click="triggerFileUpload"
+                  :disabled="!currentRoom"
+                  class="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-50"
+                  title="发送图片"
+              >
+                <i class="fa fa-picture-o text-xl"></i>
+              </button>
               <input v-model="inputContent" @keyup.enter="handleSend" :disabled="!currentRoom" type="text" placeholder="输入消息... (Enter发送)" class="flex-1 px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               <button @click="handleSend" :disabled="!currentRoom || !inputContent.trim()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 <span>发送</span> <i class="fa fa-paper-plane"></i>
@@ -149,6 +218,31 @@
         </div>
 
       </div>
+      <div v-if="msgContextMenu.visible"
+           class="fixed z-50 flex flex-col gap-2 animate-scale-in origin-top-left"
+           :style="{ top: msgContextMenu.y + 'px', left: msgContextMenu.x + 'px' }">
+
+        <div class="bg-white dark:bg-slate-800 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 p-1.5 flex gap-1 items-center mx-auto">
+          <button v-for="emoji in reactionEmojis" :key="emoji"
+                  @click.stop="handleReaction(emoji)"
+                  class="w-9 h-9 flex items-center justify-center text-xl hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-transform hover:scale-125">
+            {{ emoji }}
+          </button>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-1.5 min-w-[180px] flex flex-col overflow-hidden text-sm">
+          <button @click="handleMenuAction('reply')" class="px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3">
+            <i class="fa fa-reply w-4 text-slate-400"></i> 回复 (Reply)
+          </button>
+          <button @click="handleMenuAction('copy')" class="px-4 py-2.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3">
+            <i class="fa fa-clone w-4 text-slate-400"></i> 复制 (Copy)
+          </button>
+          <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
+          <button @click="handleMenuAction('delete')" class="px-4 py-2.5 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3">
+            <i class="fa fa-trash-o w-4"></i> 删除 (Delete)
+          </button>
+        </div>
+      </div>
     </main>
 
     <div v-if="showAiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
@@ -177,6 +271,7 @@
                 <option value="deepseek-v3">DeepSeek-V3</option>
                 <option value="deepseek-r1">DeepSeek-R1</option>
                 <option value="llama3.1">Llama 3.1</option>
+                <option value="wanx-v1">wanx-v1(绘画专用）</option>
               </select>
             </div>
             <div>
@@ -308,6 +403,7 @@
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import QuizHeader from "@/components/QuizHeader.vue";
 import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom, getRoomAiList, deleteRoomAi, deleteRoom, pinRoom, renameRoom, updateRoom } from "@/api/room.js";
+import { submitFeedback } from "@/api/feedback.js";
 import MarkdownIt from 'markdown-it';
 // --- 右键菜单状态 ---
 const contextMenu = ref({
@@ -416,6 +512,49 @@ const showRightSidebar = ref(true);
 const activeAiList = ref([]);
 let pollTimer = null;
 
+// 隐藏文件输入框引用
+const fileInput = ref(null);
+// 文件选择
+const triggerFileUpload = () => {
+  if (fileInput.value) {
+    fileInput.value.click();
+  } else {
+    console.error("找不到文件输入框组件");
+  }};
+// 处理文件选择
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // 限制一下大小，防止数据库爆炸 (比如限制 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    alert("图片太大啦，请上传 2MB 以内的图片");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64Content = e.target.result;
+
+    try {
+      // 发送图片消息
+      await sendMessage({
+        roomId: currentRoom.value.id,
+        senderId: myUserId,
+        senderName: userInfo.nickname || 'User' + myUserId,
+        content: base64Content,
+        type: 'IMAGE'
+      });
+      await loadMessages();
+      scrollToBottom();
+    } catch (err) {
+      console.error(err);
+      alert("图片发送失败");
+    }
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+};
 // --- 弹窗状态 ---
 const showAiModal = ref(false);
 const showDeleteModal = ref(false); // 新增删除弹窗控制
@@ -431,6 +570,8 @@ const aiToDelete = ref(null);       // 暂存要删除的 AI
 const aiForm = ref({ aiName: '', systemPrompt: '', apiKey: '', modelName: 'qwen-plus' });
 
 const isFormValid = computed(() => aiForm.value.aiName.trim() && aiForm.value.systemPrompt.trim());
+// 状态
+const replyingTo = ref(null);
 
 // --- 基础逻辑 ---
 const loadRooms = async () => {
@@ -528,11 +669,24 @@ const loadMessages = async () => {
     const res = await getHistoryMessages(currentRoom.value.id);
     if (res.code === 200) {
       const newMessages = res.data;
-      if (newMessages.length > messages.value.length) {
-        messages.value = newMessages;
+
+      if (messages.value.length > 0) {
+        newMessages.forEach(newMsg => {
+          const oldMsg = messages.value.find(m => m.id === newMsg.id);
+          // 如果旧消息里有点赞，且新消息里没点赞，就拷贝过去
+          if (oldMsg && oldMsg.reactions && (!newMsg.reactions || newMsg.reactions.length === 0)) {
+            newMsg.reactions = oldMsg.reactions;
+          }
+        });
+      }
+
+      // 只有当有新消息，或者第一次加载时才滚动到底部
+      const shouldScroll = messages.value.length === 0 || newMessages.length > messages.value.length;
+
+      messages.value = newMessages;
+
+      if (shouldScroll) {
         scrollToBottom();
-      } else {
-        messages.value = newMessages;
       }
     }
   } catch (e) { console.error(e); }
@@ -545,23 +699,70 @@ const loadRoomAis = async () => {
     if (res.code === 200) activeAiList.value = res.data;
   } catch (e) { console.error(e); }
 }
+const handleMenuAction = async (action) => {
+  const msg = msgContextMenu.value.message;
+  if (!msg) return;
+  closeAllMenus(); // 关闭菜单
 
+  switch (action) {
+    case 'reply':
+      // 1. 设置回复状态
+      replyingTo.value = msg;
+      // 2. 聚焦输入框
+      nextTick(() => {
+        const input = document.querySelector('input[type="text"]'); // 确保选择器对
+        if (input) input.focus();
+      });
+      break;
+
+    case 'copy':
+      try {
+        await navigator.clipboard.writeText(msg.content);
+        // 这里可以加个 toast 提示
+      } catch (e) { alert("复制失败"); }
+      break;
+
+    case 'delete':
+      if (confirm("确定删除这条消息吗？")) {
+        try {
+          // 1. 调用后端删除
+          await deleteMessageApi(msg.id);
+          // 2. 前端立刻移除 (视觉反馈)
+          messages.value = messages.value.filter(m => m.id !== msg.id);
+        } catch (e) {
+          alert("删除失败");
+        }
+      }
+      break;
+  }
+};
 const handleSend = async () => {
   const content = inputContent.value.trim();
   if (!content || !currentRoom.value) return;
+
+  // 暂存回复ID，然后清空状态
+  const replyId = replyingTo.value ? replyingTo.value.id : null;
+
+  // 清空输入框和回复状态
   inputContent.value = "";
+  replyingTo.value = null;
+
   try {
     await sendMessage({
       roomId: currentRoom.value.id,
       senderId: myUserId,
       senderName: userInfo.nickname || 'User' + myUserId,
-      content: content
+      content: content,
+      replyToId: replyId // [新增] 传给后端
     });
     await loadMessages();
     scrollToBottom();
   } catch (e) { alert("发送失败"); }
 };
-
+// --- 取消回复 ---
+const cancelReply = () => {
+  replyingTo.value = null;
+};
 // --- 召唤 AI 逻辑 ---
 const handleAddAi = () => {
   if (!currentRoom.value) return;
@@ -645,6 +846,95 @@ const handlePinRoom = async () => {
     alert("操作失败");
   }
 };
+// 图片预览（简单版：新窗口打开）
+const previewImage = (url) => {
+  window.open(url, '_blank');
+};
+const handleLike = async (msg) => {
+  try {
+    await submitFeedback({
+      messageId: msg.id,
+      userId: myUserId,
+      aiName: msg.senderName,
+      score: 5,
+      comment: "用户点赞"
+    });
+    alert("感谢您的反馈！");
+  } catch (e) {
+    console.error(e);
+    alert("反馈失败");
+  }
+};
+const msgContextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  message: null
+});
+const reactionEmojis = ['👍', '👎', '❤️', '🔥', '🥰', '👏', '😂'];
+const openMsgContextMenu = (e,msg) => {
+  closeContextMenu();
+
+  let x = e.clientX;
+  let y = e.clientY;
+
+  msgContextMenu.value = {
+    visible: true,
+    x: x,
+    y: y,
+    message: msg
+  };
+};
+const closeAllMenus = () => {
+  contextMenu.value.visible = false; // 关闭房间菜单
+  msgContextMenu.value.visible = false; // 关闭消息菜单
+};
+
+// 3. 处理点赞逻辑
+const handleReaction = async (emoji, targetMsg = null) => {
+  // 确定是对哪条消息操作
+  const msg = targetMsg || msgContextMenu.value.message;
+  if (!msg) return;
+
+  // 1. 初始化数组
+  if (!msg.reactions) msg.reactions = [];
+
+  // 2. 查找是否已经有点赞
+  const existingReact = msg.reactions.find(r => r.emoji === emoji);
+
+  if (existingReact) {
+    // 如果有，数量+1
+    existingReact.count++;
+  } else {
+    // 如果没有，新增一个
+    msg.reactions.push({ emoji: emoji, count: 1 });
+  }
+
+  // 3. 关闭菜单
+  closeAllMenus();
+
+  // 4. 发送给后端 (虽然只用来统计，不影响前端展示)
+  try {
+    await submitFeedback({
+      messageId: msg.id,
+      userId: myUserId,
+      aiName: msg.senderName,
+      reaction: emoji,
+      score: 5
+    });
+  } catch (e) {
+    console.error("点赞保存失败", e);
+  }
+};
+
+// 修改 onMounted 监听
+onMounted(() => {
+  loadRooms();
+  window.addEventListener('click', closeAllMenus);
+  window.addEventListener('contextmenu', (e) => {
+    // 这里的逻辑稍微处理一下，防止默认菜单干扰，或者只在特定区域阻止
+  });
+});
 </script>
 
 <style>
@@ -688,5 +978,20 @@ const handlePinRoom = async () => {
 @keyframes bounce {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
+}
+/* 简单的弹跳动画 */
+@keyframes bounce-in {
+  0% { opacity: 0; transform: scale(0.5) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-bounce-in {
+  animation: bounce-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.scale-in-center {
+  animation: scale-in 0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+}
+@keyframes scale-in {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 </style>

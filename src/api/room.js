@@ -95,3 +95,11 @@ export function updateRoom(data) {
         data: data
     })
 }
+// [新增] 删除消息
+export function deleteMessageApi(msgId) {
+    return request({
+        url: '/room/message/delete',
+        method: 'delete',
+        params: { msgId }
+    })
+}
