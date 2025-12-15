@@ -740,24 +740,45 @@ const handleSend = async () => {
   const content = inputContent.value.trim();
   if (!content || !currentRoom.value) return;
 
-  // 暂存回复ID，然后清空状态
   const replyId = replyingTo.value ? replyingTo.value.id : null;
-
-  // 清空输入框和回复状态
-  inputContent.value = "";
+  inputContent.value = ""; // 1. 先清空输入框，体验更好
   replyingTo.value = null;
 
+  // 2. 【乐观更新】先在本地模拟一条消息上屏（不等服务器）
+  const optimisticMsg = {
+    id: 'temp_' + Date.now(),
+    roomId: currentRoom.value.id,
+    senderId: myUserId,
+    senderName: userInfo.nickname || '我',
+    content: content,
+    type: 'TEXT',
+    createTime: new Date().toISOString(),
+    reactions: []
+  };
+  messages.value.push(optimisticMsg);
+  scrollToBottom();
+
   try {
+    // 3. 发送给后端
     await sendMessage({
       roomId: currentRoom.value.id,
       senderId: myUserId,
       senderName: userInfo.nickname || 'User' + myUserId,
       content: content,
-      replyToId: replyId // [新增] 传给后端
+      replyToId: replyId
     });
+
+    // 4. 发送成功后，立即拉取一次数据
+    // 因为后端现在是“同步插入思考消息”，所以这次拉取能立刻拉到“思考中”的气泡！
     await loadMessages();
     scrollToBottom();
-  } catch (e) { alert("发送失败"); }
+
+  } catch (e) {
+    console.error(e);
+    alert("发送失败");
+    // 如果失败，把刚才假装发成功的消息删掉
+    messages.value = messages.value.filter(m => m.id !== optimisticMsg.id);
+  }
 };
 // --- 取消回复 ---
 const cancelReply = () => {
