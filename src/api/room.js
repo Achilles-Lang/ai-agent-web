@@ -1,15 +1,11 @@
 import request from '@/utils/request'
 
 // 1. 创建一个新房间
-export function createRoom(name) {
-    const userId = localStorage.getItem('USER_ID');
+export function createRoom(data) {
     return request({
         url: '/room/create',
         method: 'post',
-        params: {
-            name: name,
-            userId: userId
-        }
+        data: data // 现在传整个对象 { roomName, description, avatar }
     })
 }
 
@@ -101,5 +97,22 @@ export function deleteMessageApi(msgId) {
         url: '/room/message/delete',
         method: 'delete',
         params: { msgId }
+    })
+}
+// 12. 更新 AI 信息
+export function updateRoomAi(data) {
+    return request({
+        url: '/room/ai/update',
+        method: 'post',
+        data: data
+    })
+}
+
+// 13. 置顶 AI
+export function pinRoomAi(aiId) {
+    return request({
+        url: '/room/ai/pin',
+        method: 'put',
+        params: { aiId }
     })
 }

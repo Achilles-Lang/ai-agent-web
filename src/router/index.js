@@ -4,7 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../views/HomePage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import ChatRoom from '../views/ChatRoom.vue'
-
+import KnowledgeBase from '../views/KnowledgeBase.vue'
 // 2. 定义路由规则
 const routes = [
     {
@@ -24,6 +24,11 @@ const routes = [
         name: 'ChatRoom',
         component: ChatRoom,
         meta: { requiresAuth: true, title: 'AI 聊天室' }
+    },
+    {
+        path: '/knowledge',
+        name: 'knowledge',
+        component: KnowledgeBase
     }
 ]
 

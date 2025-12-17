@@ -2,10 +2,10 @@
   <div class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50">
     <quiz-header></quiz-header>
 
-    <main class="flex-grow container mx-auto px-4 py-6 h-[calc(100vh-64px)]">
-      <div class="flex h-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+    <main class="flex-grow flex flex-col h-[calc(100vh-64px)] w-full overflow-hidden bg-white dark:bg-slate-800">
+      <div class="flex h-full w-full border-t border-slate-200 dark:border-slate-700">
 
-        <div class="w-64 bg-slate-100 dark:bg-slate-800/50 border-r border-slate-200 dark:border-slate-700 flex flex-col flex-shrink-0">
+        <div class="w-64 bg-slate-50 dark:bg-slate-900/50 border-r border-slate-200 dark:border-slate-700 flex flex-col flex-shrink-0">
           <div class="p-4 border-b border-slate-200 dark:border-slate-700">
             <button
                 @click="handleCreateRoom"
@@ -69,8 +69,9 @@
                    class="flex gap-4 group relative mb-6"
                    :class="msg.senderId == myUserId ? 'flex-row-reverse' : ''">
 
-                <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-md"
-                     :class="getAvatarColor(msg.senderName)">
+                <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-md cursor-pointer hover:opacity-90 transition-opacity"
+                     :class="getAvatarColor(msg.senderName)"
+                     @contextmenu.prevent="msg.senderId === 0 ? openAiContextMenu($event, findAiByName(msg.senderName)) : null">
                   {{ msg.senderName ? msg.senderName.charAt(0) : '?' }}
                 </div>
 
@@ -81,26 +82,54 @@
                     {{ msg.senderName }}
                   </div>
 
-                  <div v-if="msg.type === 'IMAGE'" class="relative">
-                    <img :src="msg.content"
-                         class="max-w-full rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-90 transition-opacity"
-                         style="max-height: 300px;"
-                         @click="previewImage(msg.content)"
-                         @contextmenu.prevent="openMsgContextMenu($event, msg)">
-                  </div>
+                  <div
+                      :id="'msg-' + msg.id"
+                      class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words markdown-body transition-all relative overflow-hidden"
+                      :class="msg.senderId == myUserId
+                        ? 'bg-indigo-600 text-white rounded-tr-none'
+                        : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'"
+                      @contextmenu.prevent="openMsgContextMenu($event, msg)"
+                  >
 
-                  <div v-else-if="msg.type === 'THINKING'"
-                       class="p-3 rounded-2xl shadow-sm bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none typing-indicator"
-                       @contextmenu.prevent="openMsgContextMenu($event, msg)">
-                    <span class="text-xs text-slate-400 mr-2">思考中</span>
-                    <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
-                  </div>
+                    <div v-if="msg.replyToMessage"
+                         @click.stop="scrollToMessage(msg.replyToId)"
+                         class="mb-2 rounded-md cursor-pointer overflow-hidden flex max-w-full select-none transition-colors"
+                         :class="msg.senderId == myUserId
+                            ? 'bg-white/20 hover:bg-white/30'
+                            : 'bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800'"
+                    >
+                      <div class="w-1 min-w-[4px] self-stretch"
+                           :class="msg.senderId == myUserId ? 'bg-white' : 'bg-indigo-500'">
+                      </div>
 
-                  <div v-else
-                       class="p-3 rounded-2xl shadow-sm text-sm leading-relaxed break-words markdown-body cursor-pointer transition-all hover:brightness-95"
-                       :class="msg.senderId == myUserId ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-tl-none'"
-                       v-html="renderMarkdown(msg.content)"
-                       @contextmenu.prevent="openMsgContextMenu($event, msg)">
+                      <div class="flex-1 flex flex-col py-1 px-2 min-w-0">
+                        <span class="text-xs font-bold truncate"
+                              :class="msg.senderId == myUserId ? 'text-indigo-50' : 'text-indigo-600 dark:text-indigo-400'">
+                          {{ msg.replyToMessage.senderName }}
+                        </span>
+
+                        <div class="text-xs opacity-90 line-clamp-2 break-all whitespace-normal"
+                             :class="msg.senderId == myUserId ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'">
+
+                          <span v-if="msg.replyToMessage.type === 'IMAGE'" class="flex items-center gap-1">
+                            <i class="fa fa-photo"></i> 图片
+                          </span>
+
+                          <span v-else>
+                            {{ getQuoteText(msg) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="msg.type === 'IMAGE'" class="mt-1">
+                      <img :src="msg.content" class="rounded-lg max-w-full cursor-pointer hover:opacity-90" @click="previewImage(msg.content)">
+                    </div>
+                    <div v-else-if="msg.type === 'THINKING'" class="typing-indicator">
+                      <span class="text-xs opacity-70 mr-2">思考中</span>
+                      <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+                    </div>
+                    <div v-else v-html="renderMarkdown(msg.content)"></div>
+
                   </div>
 
                   <div v-if="msg.reactions && msg.reactions.length > 0"
@@ -115,8 +144,8 @@
                     >
                       <span class="text-base leading-none">{{ react.emoji }}</span>
                       <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 leading-none">
-          {{ react.count }}
-        </span>
+                        {{ react.count }}
+                      </span>
                     </button>
 
                   </div>
@@ -199,6 +228,7 @@
             </div>
 
             <div v-for="ai in activeAiList" :key="ai.id"
+                 @contextmenu.prevent="openAiContextMenu($event, ai)"
                  class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 group cursor-pointer relative transition-colors">
               <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
@@ -206,7 +236,10 @@
                   {{ ai.aiName.charAt(0) }}
                 </div>
                 <div class="min-w-0">
-                  <p class="text-sm font-medium truncate">{{ ai.aiName }}</p>
+                  <p class="text-sm font-medium truncate flex items-center gap-1">
+                    {{ ai.aiName }}
+                    <i v-if="ai.isPinned" class="fa fa-thumb-tack text-xs text-indigo-500 rotate-45" title="置顶"></i>
+                  </p>
                   <p class="text-xs text-slate-500 truncate opacity-80">{{ ai.modelName || 'qwen' }}</p>
                 </div>
               </div>
@@ -242,6 +275,27 @@
             <i class="fa fa-trash-o w-4"></i> 删除 (Delete)
           </button>
         </div>
+      </div>
+      <div v-if="aiContextMenu.visible"
+           class="fixed z-50 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden py-1.5 animate-scale-in origin-top-left"
+           :style="{ top: aiContextMenu.y + 'px', left: aiContextMenu.x + 'px' }">
+
+        <button @click="handleAiAction('pin')" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
+          <i class="fa w-4 text-center" :class="aiContextMenu.ai?.isPinned ? 'fa-thumb-tack text-indigo-500' : 'fa-thumb-tack text-slate-400'"></i>
+          {{ aiContextMenu.ai?.isPinned ? '取消置顶' : '置顶成员' }}
+        </button>
+
+        <button @click="handleAiAction('edit')" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
+          <i class="fa fa-cog w-4 text-center text-slate-400"></i>
+          查看资料 / 设置
+        </button>
+
+        <div class="my-1 border-t border-slate-100 dark:border-slate-700"></div>
+
+        <button @click="handleAiAction('delete')" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors">
+          <i class="fa fa-trash-o w-4 text-center"></i>
+          移除该 AI
+        </button>
       </div>
     </main>
 
@@ -332,33 +386,45 @@
     </div>
 
 
-    <div v-if="showEditRoomModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all scale-100">
+    <div v-if="showCreateRoomModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all scale-100 animate-scale-in">
 
         <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-          <h3 class="text-lg font-bold text-slate-800 dark:text-white">房间设置</h3>
-          <button @click="showEditRoomModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa fa-times text-lg"></i></button>
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm"><i class="fa fa-plus"></i></span>
+            创建新房间
+          </h3>
+          <button @click="showCreateRoomModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa fa-times text-lg"></i></button>
         </div>
 
         <div class="p-6 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">房间名称</label>
-            <input v-model="editRoomForm.roomName" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">房间名称 <span class="text-red-500">*</span></label>
+            <input v-model="createRoomForm.roomName" type="text" placeholder="给房间起个响亮的名字" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
           </div>
+
           <div>
-            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">群简介</label>
-            <textarea v-model="editRoomForm.description" rows="3" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none" placeholder="介绍一下这个群是干嘛的..."></textarea>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">房间简介</label>
+            <textarea v-model="createRoomForm.description" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none" placeholder="介绍一下这个群聊的主题..."></textarea>
           </div>
+
           <div>
-            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">群头像 (URL)</label>
-            <input v-model="editRoomForm.avatar" type="text" placeholder="http://..." class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-            <p class="text-xs text-slate-400 mt-1">贴入图片链接，留空则显示默认文字头像</p>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">群头像 (图片URL)</label>
+            <div class="flex gap-3">
+              <input v-model="createRoomForm.avatar" type="text" placeholder="https://example.com/image.png" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+              <div class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700 flex-shrink-0 overflow-hidden border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+                <img v-if="createRoomForm.avatar" :src="createRoomForm.avatar" class="w-full h-full object-cover" @error="e=>e.target.style.display='none'">
+                <i v-else class="fa fa-image text-slate-400"></i>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
-          <button @click="showEditRoomModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-          <button @click="submitEditRoom" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md transition-colors">保存设置</button>
+          <button @click="showCreateRoomModal = false" class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-xl transition-colors">取消</button>
+          <button @click="confirmCreateRoom" :disabled="!createRoomForm.roomName.trim()" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            <i class="fa fa-check"></i> 创建
+          </button>
         </div>
 
       </div>
@@ -396,15 +462,159 @@
 
       </div>
     </div>
+    <div v-if="showEditRoomModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all scale-100 animate-scale-in">
+
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <i class="fa fa-cog text-indigo-500"></i> 房间设置
+          </h3>
+          <button @click="showEditRoomModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa fa-times text-lg"></i></button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">房间名称 <span class="text-red-500">*</span></label>
+            <input v-model="editRoomForm.roomName" type="text" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">房间简介</label>
+            <textarea v-model="editRoomForm.description" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">群头像 (图片URL)</label>
+            <div class="flex gap-3">
+              <input v-model="editRoomForm.avatar" type="text" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+              <div class="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700 flex-shrink-0 overflow-hidden border border-slate-200 dark:border-slate-600 flex items-center justify-center">
+                <img v-if="editRoomForm.avatar" :src="editRoomForm.avatar" class="w-full h-full object-cover" @error="e=>e.target.style.display='none'">
+                <i v-else class="fa fa-image text-slate-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
+          <button @click="showEditRoomModal = false" class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 rounded-xl transition-colors">取消</button>
+          <button @click="submitEditRoom" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all flex items-center gap-2">
+            <i class="fa fa-save"></i> 保存修改
+          </button>
+        </div>
+
+      </div>
+    </div>
+    <div v-if="showEditAiModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all scale-100">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <i class="fa fa-cog text-indigo-500"></i> 配置 AI
+          </h3>
+          <button @click="showEditAiModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa fa-times text-lg"></i></button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">AI 昵称</label>
+            <input v-model="editAiForm.aiName" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">核心人设 (System Prompt)</label>
+            <textarea v-model="editAiForm.systemPrompt" rows="4" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">模型</label>
+              <select v-model="editAiForm.modelName" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="qwen-plus">通义千问</option>
+                <option value="deepseek-v3">DeepSeek-V3</option>
+                <option value="deepseek-r1">DeepSeek-R1</option>
+                <option value="wanx-v1">wanx-v1 (绘画)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">API Key (可选)</label>
+              <input v-model="editAiForm.apiKey" type="password" placeholder="留空则保持原样" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
+          <button @click="showEditAiModal = false" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+          <button @click="submitEditAi" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md">保存配置</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import QuizHeader from "@/components/QuizHeader.vue";
-import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom, getRoomAiList, deleteRoomAi, deleteRoom, pinRoom, renameRoom, updateRoom } from "@/api/room.js";
+import { createRoom, getRoomList, sendMessage, getHistoryMessages, addAiToRoom, getRoomAiList, deleteRoomAi, deleteRoom, pinRoom, renameRoom, updateRoom,pinRoomAi,updateRoomAi } from "@/api/room.js";
 import { submitFeedback } from "@/api/feedback.js";
 import MarkdownIt from 'markdown-it';
+const aiContextMenu = ref({ visible: false, x: 0, y: 0, ai: null });
+const showEditAiModal = ref(false);
+const editAiForm = ref({}); // 存储编辑数据
+const showCreateRoomModal = ref(false);
+const findAiByName = (name) => {
+  return activeAiList.value.find(ai => ai.aiName === name);
+};
+
+// 1. 打开 AI 右键菜单
+const openAiContextMenu = (e, ai) => {
+  if (!ai) return;
+  // 关闭其他菜单
+  closeAllMenus();
+
+  aiContextMenu.value = {
+    visible: true,
+    x: e.clientX,
+    y: e.clientY,
+    ai: ai
+  };
+};
+
+// 2. 处理菜单点击
+const handleAiAction = async (action) => {
+  const ai = aiContextMenu.value.ai;
+  if (!ai) return;
+  closeAllMenus();
+
+  switch (action) {
+    case 'pin':
+      try {
+        await pinRoomAi(ai.id);
+        await loadRoomAis(); // 刷新列表，后端会重新排序
+      } catch (e) { alert("操作失败"); }
+      break;
+
+    case 'edit':
+      // 填充表单
+      editAiForm.value = { ...ai }; // 浅拷贝
+      showEditAiModal.value = true;
+      break;
+
+    case 'delete':
+      openDeleteModal(ai); // 复用你已有的删除逻辑
+      break;
+  }
+};
+
+// 3. 提交编辑
+const submitEditAi = async () => {
+  try {
+    await updateRoomAi(editAiForm.value);
+    showEditAiModal.value = false;
+    alert("配置已更新");
+    await loadRoomAis(); // 刷新列表
+  } catch (e) {
+    console.error(e);
+    alert("更新失败");
+  }
+};
+
 // --- 右键菜单状态 ---
 const contextMenu = ref({
   visible: false,
@@ -464,6 +674,22 @@ const handleDeleteRoom = () => {
 
   roomToDelete.value = room; // 记住要删哪个房间
   showDeleteRoomModal.value = true; // 显示警告弹窗
+};
+// 跳转到指定消息
+const scrollToMessage = (msgId) => {
+  const targetId = 'msg-' + msgId;
+  const element = document.getElementById(targetId);
+
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    element.classList.add('animate-pulse-highlight');
+    setTimeout(() => {
+      element.classList.remove('animate-pulse-highlight');
+    }, 1500);
+  } else {
+    // [修改文案] 明确告知用户原因
+    alert("无法跳转：原消息太久远，未加载在当前列表中。");
+  }
 };
 // 确认删除房间
 const confirmDeleteRoom = async () => {
@@ -648,11 +874,39 @@ const confirmRename = async () => {
     alert("修改失败，请重试");
   }
 };
-const handleCreateRoom = async () => {
-  const name = prompt("请输入新房间的名字：");
-  if (name) { await createRoom(name); await loadRooms(); }
+const handleCreateRoom = () => {
+  // 重置表单
+  createRoomForm.value = { roomName: '', description: '', avatar: '' };
+  // 打开弹窗
+  showCreateRoomModal.value = true;
 };
 
+// --- 添加 confirmCreateRoom 函数 ---
+const confirmCreateRoom = async () => {
+  if (!createRoomForm.value.roomName.trim()) return;
+
+  try {
+    // 调用 API (注意：这里假设您已经更新了 api/room.js 以支持传对象，或者传多个参数)
+    // 如果 api/room.js 还没改，需要去改一下
+    await createRoom(createRoomForm.value);
+
+    showCreateRoomModal.value = false;
+    await loadRooms(); // 刷新列表
+
+    // 自动选中新房间 (可选优化)
+    // const newRoom = rooms.value[0]; // 假设新房间在最前面
+    // if(newRoom) selectRoom(newRoom);
+
+  } catch (e) {
+    console.error(e);
+    alert("创建失败，请检查网络");
+  }
+};
+const createRoomForm = ref({
+  roomName: '',
+  description: '',
+  avatar: ''
+});
 const selectRoom = async (room) => {
   currentRoom.value = room;
   messages.value = [];
@@ -670,22 +924,23 @@ const loadMessages = async () => {
     if (res.code === 200) {
       const newMessages = res.data;
 
+      // 【关键修复】保留点赞状态，但不要合并 temp_ 消息
       if (messages.value.length > 0) {
         newMessages.forEach(newMsg => {
+          // 只把旧消息里的 reactions (点赞) 拷过来，防止闪烁
           const oldMsg = messages.value.find(m => m.id === newMsg.id);
-          // 如果旧消息里有点赞，且新消息里没点赞，就拷贝过去
-          if (oldMsg && oldMsg.reactions && (!newMsg.reactions || newMsg.reactions.length === 0)) {
+          if (oldMsg && oldMsg.reactions) {
             newMsg.reactions = oldMsg.reactions;
           }
         });
       }
 
-      // 只有当有新消息，或者第一次加载时才滚动到底部
-      const shouldScroll = messages.value.length === 0 || newMessages.length > messages.value.length;
-
+      // 【核心】直接覆盖！不要做任何拼接。
+      // 这样服务器返回的“真消息”会自动替换掉本地的“假消息”，重复消失。
       messages.value = newMessages;
 
-      if (shouldScroll) {
+      // 只有第一次加载或消息变多时才滚动
+      if (messages.value.length === 0 || newMessages.length > messages.value.length) {
         scrollToBottom();
       }
     }
@@ -699,6 +954,7 @@ const loadRoomAis = async () => {
     if (res.code === 200) activeAiList.value = res.data;
   } catch (e) { console.error(e); }
 }
+const selectedQuote = ref('');
 const handleMenuAction = async (action) => {
   const msg = msgContextMenu.value.message;
   if (!msg) return;
@@ -706,9 +962,16 @@ const handleMenuAction = async (action) => {
 
   switch (action) {
     case 'reply':
-      // 1. 设置回复状态
+      const selection = window.getSelection().toString();
+      if (selection && selection.trim().length > 0) {
+        selectedQuote.value = selection.trim();
+      } else {
+        selectedQuote.value = ''; // 没选中则引用全文
+      }
+
+      // 设置回复状态
       replyingTo.value = msg;
-      // 2. 聚焦输入框
+      // 聚焦输入框
       nextTick(() => {
         const input = document.querySelector('input[type="text"]'); // 确保选择器对
         if (input) input.focus();
@@ -741,43 +1004,43 @@ const handleSend = async () => {
   if (!content || !currentRoom.value) return;
 
   const replyId = replyingTo.value ? replyingTo.value.id : null;
-  inputContent.value = ""; // 1. 先清空输入框，体验更好
+  inputContent.value = "";
   replyingTo.value = null;
 
-  // 2. 【乐观更新】先在本地模拟一条消息上屏（不等服务器）
+  // ==========================================================
+  // 【修复点】乐观更新：不等后端，自己先画一个
+  // ==========================================================
+  const tempId = 'temp_' + Date.now();
   const optimisticMsg = {
-    id: 'temp_' + Date.now(),
+    id: tempId,
     roomId: currentRoom.value.id,
     senderId: myUserId,
     senderName: userInfo.nickname || '我',
     content: content,
-    type: 'TEXT',
+    type: 'TEXT', // 必须大写，和后端枚举一致
     createTime: new Date().toISOString(),
     reactions: []
   };
   messages.value.push(optimisticMsg);
   scrollToBottom();
-
+  const extraData = selectedQuote.value ? { quoteContent: selectedQuote.value } : null;
   try {
-    // 3. 发送给后端
     await sendMessage({
       roomId: currentRoom.value.id,
       senderId: myUserId,
       senderName: userInfo.nickname || 'User' + myUserId,
       content: content,
-      replyToId: replyId
+      replyToId: replyId,
+      extraData: extraData,
     });
 
-    // 4. 发送成功后，立即拉取一次数据
-    // 因为后端现在是“同步插入思考消息”，所以这次拉取能立刻拉到“思考中”的气泡！
+    // 发送成功后，立即拉取一次，把 temp_ 消息替换为真消息
     await loadMessages();
-    scrollToBottom();
 
   } catch (e) {
-    console.error(e);
+    // 失败回滚
+    messages.value = messages.value.filter(m => m.id !== tempId);
     alert("发送失败");
-    // 如果失败，把刚才假装发成功的消息删掉
-    messages.value = messages.value.filter(m => m.id !== optimisticMsg.id);
   }
 };
 // --- 取消回复 ---
@@ -808,7 +1071,25 @@ const submitAiForm = async () => {
     alert("召唤失败");
   }
 };
+// 获取引用文本（优先取截断内容，否则取全文）
+const getQuoteText = (msg) => {
+  try {
+    if (msg.extraData) {
+      // 兼容 extraData 已经是对象的情况（axios 自动解析）或 字符串的情况
+      const data = typeof msg.extraData === 'string'
+          ? JSON.parse(msg.extraData)
+          : msg.extraData;
 
+      if (data && data.quoteContent) {
+        return data.quoteContent;
+      }
+    }
+  } catch (e) {
+    console.error("解析引用内容出错", e);
+  }
+  // 兜底：返回原消息全文
+  return msg.replyToMessage?.content || '';
+};
 // --- 删除 AI 逻辑 (修复网络错误) ---
 const openDeleteModal = (ai) => {
   aiToDelete.value = ai;
@@ -909,6 +1190,7 @@ const openMsgContextMenu = (e,msg) => {
 const closeAllMenus = () => {
   contextMenu.value.visible = false; // 关闭房间菜单
   msgContextMenu.value.visible = false; // 关闭消息菜单
+  aiContextMenu.value.visible = false;
 };
 
 // 3. 处理点赞逻辑
@@ -1014,5 +1296,14 @@ onMounted(() => {
 @keyframes scale-in {
   0% { transform: scale(0); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
+}
+@keyframes highlight {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); filter: brightness(1.1); }
+}
+.animate-pulse-highlight {
+  animation: highlight 0.5s ease-in-out 2; /* 闪烁两次 */
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.5); /* 增加发光效果 */
+  z-index: 10;
 }
 </style>

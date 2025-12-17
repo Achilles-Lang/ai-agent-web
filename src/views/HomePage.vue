@@ -9,7 +9,7 @@
         </h1>
 
         <p class="text-slate-600 dark:text-slate-400 text-xl mb-12">
-          在这里，你可以创建属于自己的话题房间，与朋友畅聊，更有 AI 助手随时待命。
+          在这里，你可以创建属于自己的话题房间，与 AI 助手畅聊。
         </p>
 
         <button
@@ -18,6 +18,13 @@
         >
           <span class="mr-2">立即开始聊天</span>
           <i class="fa fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+        </button>
+        <button
+            @click="$router.push('/knowledge')"
+            class="mt-4 w-full bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50 hover:bg-indigo-50 dark:hover:bg-slate-600 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2"
+        >
+          <i class="fa fa-database"></i>
+          管理 RAG 知识库
         </button>
       </div>
     </main>
